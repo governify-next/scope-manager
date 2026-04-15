@@ -4,7 +4,6 @@ import type { FieldArrayName } from '../types/organization.types.js';
 import type { ExpandMode } from '../types/membership.types.js';
 import * as membershipService from '../services/membership.service.js';
 import * as elementService from '../services/element.service.js';
-import * as agreementTemplateService from '../services/agreementTemplate.service.js';
 import { Types } from 'mongoose';
 import { getUserByUsername } from './user.service.js';
 import { DuplicateKeyError, NotFoundError } from '../utils/customErrors.js';
@@ -53,14 +52,9 @@ export const deleteOrganization = async (orgName: string) => {
     const orgId = organization!._id;
     // Borramos las memberships asociadas
     await membershipService.removeMembershipsByOrganization(orgId);
-    // Borramos los agreement templates asociados
-    const templates =
-        await agreementTemplateService.getCleanAgreementTemplatesByOrganization(orgId);
-    await Promise.all(
-        templates.map((t) =>
-            agreementTemplateService.deleteAgreementTemplateByOrganization(orgId, t.name),
-        ),
-    );
+
+    // TODO: borrado en cascada de agreement templates
+
     // Borramos los elements asociados
     const elements = await elementService.getElementsByOrganization(orgId);
     await Promise.all(elements.map((e) => elementService.deleteElement(orgId, e.name)));
