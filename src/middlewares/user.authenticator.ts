@@ -8,6 +8,9 @@ import { bootEnv } from '../config/bootConfig.js';
 
 const logger = getLogger().setTag('authentication.ts');
 
+const JWT_SECRET = bootEnv.JWT_SECRET;
+const USER_AUTHENTICATION_ENABLED = bootEnv.USER_AUTHENTICATION_ENABLED;
+
 declare module 'express' {
     interface Request {
         auth?: UserJwtPayload;
@@ -20,7 +23,14 @@ export interface UserJwtPayload {
     systemRole: SystemRole;
 }
 
-export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+export const checkUserAuthentication = (req: Request, res: Response, next: NextFunction) => {
+    if (!USER_AUTHENTICATION_ENABLED) {
+        logger.debug(
+            'Skipping user authentication in development environment!! DO NOT USE IN PRODUCTION!!',
+        );
+        return next();
+    }
+
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return next(new UnauthorizedError('Authorization header missing or malformed'));
@@ -28,7 +38,7 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
 
     const token = authHeader.split(' ')[1];
     try {
-        const decoded = jwt.verify(token, bootEnv.JWT_SECRET) as UserJwtPayload;
+        const decoded = jwt.verify(token, JWT_SECRET) as UserJwtPayload;
 
         req.auth = decoded; // Attach UserJwtPayload to the Request for downstream use
         next();
@@ -40,6 +50,13 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
 
 export const hasRole = (requiredRole: SystemRole) => {
     return (req: Request, res: Response, next: NextFunction) => {
+        if (!USER_AUTHENTICATION_ENABLED) {
+            logger.debug(
+                'Skipping role check in development environment!! DO NOT USE IN PRODUCTION!!',
+            );
+            return next();
+        }
+
         if (!req.auth) {
             return next(new UnauthorizedError('User not authenticated'));
         }

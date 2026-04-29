@@ -6,11 +6,14 @@ import * as oidc from 'openid-client';
 import { UnauthorizedError } from '../utils/customErrors.js';
 import { bootEnv } from '../config/bootConfig.js';
 
-const oidcConfig = await oidc.discovery(
-    bootEnv.OIDC_ISSUER_URL,
-    bootEnv.OIDC_CLIENT_ID,
-    bootEnv.OIDC_CLIENT_SECRET,
-);
+let oidcConfig: oidc.Configuration | null = null;
+if (bootEnv.OIDC_ENABLED) {
+    oidcConfig = await oidc.discovery(
+        bootEnv.OIDC_ISSUER_URL,
+        bootEnv.OIDC_CLIENT_ID,
+        bootEnv.OIDC_CLIENT_SECRET,
+    );
+}
 
 export const createUser = async (data: Partial<IUser>) => {
     return await userRepository.createUser(data);
@@ -46,7 +49,7 @@ export const login = async (login: string, password: string) => {
 };
 
 export const oidcLogin = async () => {
-    const loginUrl = oidc.buildAuthorizationUrl(oidcConfig, {
+    const loginUrl = oidc.buildAuthorizationUrl(oidcConfig!, {
         redirect_uri: bootEnv.OIDC_REDIRECT_URI,
         scope: bootEnv.OIDC_SCOPE,
     });
@@ -55,7 +58,7 @@ export const oidcLogin = async () => {
 };
 
 export const oidcCallback = async (req: Request) => {
-    const tokens = await oidc.authorizationCodeGrant(oidcConfig, req);
+    const tokens = await oidc.authorizationCodeGrant(oidcConfig!, req);
 
     const { sub } = tokens.claims()!;
 
