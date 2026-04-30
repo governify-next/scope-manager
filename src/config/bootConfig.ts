@@ -10,7 +10,7 @@ export const bootEnv = {
     NODE_ENV: process.env.NODE_ENV || 'development',
     GOV_LOG_LEVEL: process.env.GOV_LOG_LEVEL || 'INFO',
     GOV_SERVICE_NAME: process.env.GOV_SERVICE_NAME || 'scope-manager',
-    PORT: process.env.PORT || '5904',
+    PORT: process.env.PORT || '5901',
 
     // Database URIs
     MONGO_URI: process.env.MONGO_URI || 'mongodb://localhost:27017/governify',
