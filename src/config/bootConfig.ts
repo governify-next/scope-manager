@@ -16,6 +16,7 @@ export const bootEnv = {
     MONGO_URI: process.env.MONGO_URI || 'mongodb://localhost:27017/governify',
 
     // JWT configuration
+    SERVICE_AUTHENTICATION_ENABLED: process.env.SERVICE_AUTHENTICATION_ENABLED === 'true',
     JWT_SECRET: process.env.JWT_SECRET || 'governify_secret_key',
 
     // OpenID Connect configuration

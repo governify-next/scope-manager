@@ -302,8 +302,6 @@ paths:
                 - Organizations
             summary: List all organizations
             operationId: getOrganizations
-            security:
-                - BearerAuth: []
             description: |
                 Returns an array with all organizations registered in the system.
                 Each organization includes its roles, element fields and agreement fields.
@@ -350,8 +348,6 @@ paths:
                 - Organizations
             summary: Create an organization
             operationId: createOrganization
-            security:
-                - BearerAuth: []
             description: |
                 Creates a new organization with a unique name and a description.
                 Requires system ADMIN role. The organization is created with a default
@@ -410,8 +406,6 @@ paths:
                 - Organizations
             summary: Get an organization by name
             operationId: getOrganizationByName
-            security:
-                - BearerAuth: []
             description: |
                 Returns the full organization identified by its unique name,
                 including its roles, element fields and agreement fields.
@@ -438,8 +432,6 @@ paths:
                 - Organizations
             summary: Update an organization
             operationId: updateOrganization
-            security:
-                - BearerAuth: []
             description: |
                 Updates the name and/or description of an existing organization.
                 Requires organization admin role.
@@ -475,8 +467,6 @@ paths:
                 - Organizations
             summary: Delete an organization
             operationId: deleteOrganization
-            security:
-                - BearerAuth: []
             description: |
                 Permanently deletes the organization and all its associated data.
                 Requires organization admin role.
@@ -521,8 +511,6 @@ paths:
                 - Roles
             summary: Add a role to the organization
             operationId: addRole
-            security:
-                - BearerAuth: []
             description: |
                 Adds a new role to the specified organization.
                 Requires organization admin role.
@@ -564,8 +552,6 @@ paths:
                 - Roles
             summary: Update a role
             operationId: updateRole
-            security:
-                - BearerAuth: []
             description: |
                 Updates the name and/or description of an existing role.
                 Requires organization admin role.
@@ -602,8 +588,6 @@ paths:
                 - Roles
             summary: Delete a role
             operationId: deleteRole
-            security:
-                - BearerAuth: []
             description: |
                 Removes a role from the organization. Requires organization admin role.
                 The built-in 'admin' role cannot be deleted.
@@ -641,8 +625,6 @@ paths:
                 - ElementFields
             summary: Add an element field
             operationId: addElementField
-            security:
-                - BearerAuth: []
             description: |
                 Adds a new field to the organization's element definition.
                 Requires organization admin role.
@@ -684,8 +666,6 @@ paths:
                 - ElementFields
             summary: Update an element field
             operationId: updateElementField
-            security:
-                - BearerAuth: []
             description: |
                 Updates an existing element field. Requires organization admin role.
                 If the name is changed, the new name must be unique within the
@@ -721,8 +701,6 @@ paths:
                 - ElementFields
             summary: Delete an element field
             operationId: deleteElementField
-            security:
-                - BearerAuth: []
             description: |
                 Removes a field from the organization's element definition.
                 Requires organization admin role.
@@ -758,8 +736,6 @@ paths:
                 - AgreementFields
             summary: Add an agreement field
             operationId: addAgreementField
-            security:
-                - BearerAuth: []
             description: |
                 Adds a new field to the organization's agreement definition.
                 Requires organization admin role.
@@ -801,8 +777,6 @@ paths:
                 - AgreementFields
             summary: Update an agreement field
             operationId: updateAgreementField
-            security:
-                - BearerAuth: []
             description: |
                 Updates an existing agreement field. Requires organization admin role.
                 If the name is changed, the new name must be unique within the
@@ -838,8 +812,6 @@ paths:
                 - AgreementFields
             summary: Delete an agreement field
             operationId: deleteAgreementField
-            security:
-                - BearerAuth: []
             description: |
                 Removes a field from the organization's agreement definition.
                 Requires organization admin role.
@@ -875,8 +847,6 @@ paths:
                 - Members
             summary: List members of an organization
             operationId: getMembers
-            security:
-                - BearerAuth: []
             description: |
                 Returns the memberships of the specified organization.
                 Requires organization admin role.
@@ -922,8 +892,6 @@ paths:
                 - Members
             summary: Add a user to the organization
             operationId: addUserToOrganization
-            security:
-                - BearerAuth: []
             description: |
                 Adds an existing user as a member of the specified organization.
                 Requires organization admin role.
@@ -979,8 +947,6 @@ paths:
                 - Members
             summary: Remove a user from the organization
             operationId: removeUserFromOrganization
-            security:
-                - BearerAuth: []
             description: |
                 Removes a user from the specified organization, deleting
                 the associated membership. Requires organization admin role.
@@ -1029,8 +995,6 @@ paths:
                 - Elements
             summary: List elements of an organization
             operationId: getElementsByOrganization
-            security:
-                - BearerAuth: []
             description: |
                 Returns all elements belonging to the specified organization.
             responses:
@@ -1056,8 +1020,6 @@ paths:
                 - Elements
             summary: Create an element
             operationId: createElement
-            security:
-                - BearerAuth: []
             description: |
                 Creates a new element within the specified organization.
                 The element name must be unique within the organization.
@@ -1124,8 +1086,6 @@ paths:
                 - Elements
             summary: Get an element by name
             operationId: getElementByName
-            security:
-                - BearerAuth: []
             description: |
                 Returns a specific element identified by its name within the organization.
             responses:
@@ -1149,8 +1109,6 @@ paths:
                 - Elements
             summary: Update an element
             operationId: updateElement
-            security:
-                - BearerAuth: []
             description: |
                 Updates an existing element. All fields must be sent in the body.
                 Fields must reference existing element fields defined in the organization.
@@ -1211,8 +1169,6 @@ paths:
                 - Elements
             summary: Delete an element
             operationId: deleteElement
-            security:
-                - BearerAuth: []
             description: |
                 Permanently deletes an element and all its associated agreement collections
                 (which in turn delete their signatures).
@@ -1254,8 +1210,6 @@ paths:
                 - ElementParts
             summary: List parts of an element
             operationId: getElementParts
-            security:
-                - BearerAuth: []
             description: |
                 Returns all parts belonging to the specified element.
             responses:
@@ -1292,8 +1246,6 @@ paths:
                 - ElementParts
             summary: Add a part to an element
             operationId: addElementPart
-            security:
-                - BearerAuth: []
             description: |
                 Adds a new part to the specified element.
                 Each part has its own auditConfig.
@@ -1356,8 +1308,6 @@ paths:
                 - ElementParts
             summary: Get a part by ID
             operationId: getElementPartById
-            security:
-                - BearerAuth: []
             description: |
                 Returns a specific part identified by its ID within the element.
             responses:
@@ -1394,8 +1344,6 @@ paths:
                 - ElementParts
             summary: Update a part
             operationId: updateElementPart
-            security:
-                - BearerAuth: []
             description: |
                 Updates the auditConfig of an existing part.
             requestBody:
@@ -1451,8 +1399,6 @@ paths:
                 - ElementParts
             summary: Delete a part
             operationId: deleteElementPart
-            security:
-                - BearerAuth: []
             description: |
                 Permanently deletes a part from the element.
             responses:
@@ -1496,8 +1442,6 @@ paths:
                 - ElementPermissions
             summary: Add roles to an element permission
             operationId: addRoleToElementPermission
-            security:
-                - BearerAuth: []
             description: |
                 Adds one or more roles to a specific permission (view, edit, delete, create) of the element.
                 The roles must exist in the organization.

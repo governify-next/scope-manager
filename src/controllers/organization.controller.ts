@@ -7,7 +7,7 @@ export const createOrganization = async (req: Request, res: Response, next: Next
     try {
         const organization = await organizationService.createOrganization(
             req.body,
-            req.auth!.userId,
+            req.userAuth!.userId,
         );
         return sendSuccess(res, {
             data: organization,

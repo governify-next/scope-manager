@@ -242,7 +242,7 @@ export const hasOrgRole = (roleName: string) => {
                 );
 
             // Buscamos si el usuario tiene ese rol en la organización
-            const hasRole = await findEspecificRole(organization._id, req.auth!.userId, roleId);
+            const hasRole = await findEspecificRole(organization._id, req.userAuth!.userId, roleId);
 
             if (!hasRole)
                 return next(

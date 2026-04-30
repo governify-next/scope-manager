@@ -12,7 +12,7 @@ const JWT_SECRET = bootEnv.JWT_SECRET;
 
 declare module 'express' {
     interface Request {
-        auth?: UserJwtPayload;
+        userAuth?: UserJwtPayload;
     }
 }
 
@@ -32,7 +32,7 @@ export const checkUserAuthentication = (req: Request, res: Response, next: NextF
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as UserJwtPayload;
 
-        req.auth = decoded; // Attach UserJwtPayload to the Request for downstream use
+        req.userAuth = decoded; // Attach UserJwtPayload to the Request for downstream use
         next();
     } catch (err) {
         logger.debug('JWT verification failed', err);
@@ -42,11 +42,11 @@ export const checkUserAuthentication = (req: Request, res: Response, next: NextF
 
 export const hasRole = (requiredRole: SystemRole) => {
     return (req: Request, res: Response, next: NextFunction) => {
-        if (!req.auth) {
+        if (!req.userAuth) {
             return next(new UnauthorizedError('User not authenticated'));
         }
 
-        const userRole = req.auth.systemRole;
+        const userRole = req.userAuth.systemRole;
         if (userRole !== requiredRole) {
             return next(new ForbiddenError('Insufficient permissions'));
         }
