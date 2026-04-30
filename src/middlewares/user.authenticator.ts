@@ -9,7 +9,6 @@ import { bootEnv } from '../config/bootConfig.js';
 const logger = getLogger().setTag('authentication.ts');
 
 const JWT_SECRET = bootEnv.JWT_SECRET;
-const USER_AUTHENTICATION_ENABLED = bootEnv.USER_AUTHENTICATION_ENABLED;
 
 declare module 'express' {
     interface Request {
@@ -24,13 +23,6 @@ export interface UserJwtPayload {
 }
 
 export const checkUserAuthentication = (req: Request, res: Response, next: NextFunction) => {
-    if (!USER_AUTHENTICATION_ENABLED) {
-        logger.debug(
-            'Skipping user authentication in development environment!! DO NOT USE IN PRODUCTION!!',
-        );
-        return next();
-    }
-
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return next(new UnauthorizedError('Authorization header missing or malformed'));
@@ -50,13 +42,6 @@ export const checkUserAuthentication = (req: Request, res: Response, next: NextF
 
 export const hasRole = (requiredRole: SystemRole) => {
     return (req: Request, res: Response, next: NextFunction) => {
-        if (!USER_AUTHENTICATION_ENABLED) {
-            logger.debug(
-                'Skipping role check in development environment!! DO NOT USE IN PRODUCTION!!',
-            );
-            return next();
-        }
-
         if (!req.auth) {
             return next(new UnauthorizedError('User not authenticated'));
         }

@@ -4,7 +4,6 @@ import { userRoutes } from './routes/user.routes.js';
 import { organizationRoutes } from './routes/organization.routes.js';
 import { healthRoutes } from './routes/health.routes.js';
 import { elementRoutes } from './routes/element.routes.js';
-import { checkUserAuthentication } from './middlewares/user.authenticator.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
@@ -22,8 +21,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(healthRoutes);
 app.use('/api/v1', userRoutes);
-app.use('/api/v1', checkUserAuthentication, organizationRoutes);
-app.use('/api/v1', checkUserAuthentication, elementRoutes);
+app.use('/api/v1', organizationRoutes);
+app.use('/api/v1', elementRoutes);
 app.use(errorHandler);
 
 export default app;
