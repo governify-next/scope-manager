@@ -1,6 +1,7 @@
 import * as userRepository from '../repositories/user.repository.js';
 import jwt from 'jsonwebtoken';
 import { Request } from 'express';
+import { URL } from 'node:url';
 import { IUser } from '../models/user.model.js';
 import * as oidc from 'openid-client';
 import { UnauthorizedError } from '../utils/customErrors.js';
@@ -58,7 +59,13 @@ export const oidcLogin = async () => {
 };
 
 export const oidcCallback = async (req: Request) => {
-    const tokens = await oidc.authorizationCodeGrant(oidcConfig!, req);
+    const host = req.get('host');
+    if (!host) {
+        throw new UnauthorizedError('Missing host header');
+    }
+
+    const callbackUrl = new URL(req.originalUrl, `${req.protocol}://${host}`);
+    const tokens = await oidc.authorizationCodeGrant(oidcConfig!, callbackUrl);
 
     const { sub } = tokens.claims()!;
 
