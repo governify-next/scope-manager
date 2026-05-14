@@ -41,4 +41,4 @@ userRoutes.delete(
 userRoutes.post('/users/login', validateLogin, userController.login);
 
 userRoutes.post('/users/oidc/login', validateOidcEnabled, userController.oidcLogin);
-userRoutes.post('/users/oidc/callback', validateOidcEnabled, userController.oidcCallback);
+userRoutes.get('/users/oidc/callback', validateOidcEnabled, userController.oidcCallback);
