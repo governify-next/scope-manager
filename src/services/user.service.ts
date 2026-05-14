@@ -67,9 +67,9 @@ export const oidcCallback = async (req: Request) => {
     const callbackUrl = new URL(req.originalUrl, `https://${host}`);
     const tokens = await oidc.authorizationCodeGrant(oidcConfig!, callbackUrl);
 
-    const { sub } = tokens.claims()!;
+    const { email } = tokens.claims()!;
 
-    const user = await userRepository.getUserByEmail(sub);
+    const user = await userRepository.getUserByEmail(email as string);
 
     if (!user) {
         throw new UnauthorizedError('No local user is associated with that email address');
