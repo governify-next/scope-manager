@@ -64,7 +64,7 @@ export const oidcCallback = async (req: Request) => {
         throw new UnauthorizedError('Missing host header');
     }
 
-    const callbackUrl = new URL(req.originalUrl, `${req.protocol}://${host}`);
+    const callbackUrl = new URL(req.originalUrl, `https://${host}`);
     const tokens = await oidc.authorizationCodeGrant(oidcConfig!, callbackUrl);
 
     const { sub } = tokens.claims()!;
