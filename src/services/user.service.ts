@@ -6,6 +6,9 @@ import { IUser } from '../models/user.model.js';
 import * as oidc from 'openid-client';
 import { UnauthorizedError } from '../utils/customErrors.js';
 import { bootEnv } from '../config/bootConfig.js';
+import { getLogger } from '../utils/logger.js';
+
+const logger = getLogger().setTag('user.service.ts');
 
 let oidcConfig: oidc.Configuration | null = null;
 if (bootEnv.OIDC_ENABLED) {
@@ -65,9 +68,17 @@ export const oidcCallback = async (req: Request) => {
     }
 
     const callbackUrl = new URL(req.originalUrl, `https://${host}`);
-    const tokens = await oidc.authorizationCodeGrant(oidcConfig!, callbackUrl);
 
-    const { email } = tokens.claims()!;
+    let tokens;
+
+    try {
+        tokens = await oidc.authorizationCodeGrant(oidcConfig!, callbackUrl);
+    } catch (error) {
+        logger.debug('OIDC callback failed', error);
+        throw new UnauthorizedError('Failed to process OIDC callback');
+    }
+
+    const { email } = tokens!.claims()!;
 
     const user = await userRepository.getUserByEmail(email as string);
 
