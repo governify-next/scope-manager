@@ -58,7 +58,7 @@ export const oidcLogin = async () => {
         scope: bootEnv.OIDC_SCOPE,
     });
 
-    return { loginUrl };
+    return loginUrl;
 };
 
 export const oidcCallback = async (req: Request) => {
