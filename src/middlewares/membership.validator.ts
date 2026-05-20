@@ -80,7 +80,7 @@ export const notSelfRemoval = async (req: Request, res: Response, next: NextFunc
     if (!req.params.username) return next(new ValidationError('Username is required'));
     try {
         const user = await getUserOrFail(req.params.username);
-        if (req.auth!.userId.toString() === user._id.toString())
+        if (req.userAuth!.userId.toString() === user._id.toString())
             return next(new ForbiddenError('You cannot remove yourself from the organization'));
         next();
     } catch (err) {

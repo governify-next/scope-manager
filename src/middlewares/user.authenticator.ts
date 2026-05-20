@@ -8,9 +8,11 @@ import { bootEnv } from '../config/bootConfig.js';
 
 const logger = getLogger().setTag('authentication.ts');
 
+const JWT_SECRET = bootEnv.JWT_SECRET;
+
 declare module 'express' {
     interface Request {
-        auth?: UserJwtPayload;
+        userAuth?: UserJwtPayload;
     }
 }
 
@@ -20,7 +22,7 @@ export interface UserJwtPayload {
     systemRole: SystemRole;
 }
 
-export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+export const checkUserAuthentication = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return next(new UnauthorizedError('Authorization header missing or malformed'));
@@ -28,9 +30,9 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
 
     const token = authHeader.split(' ')[1];
     try {
-        const decoded = jwt.verify(token, bootEnv.JWT_SECRET) as UserJwtPayload;
+        const decoded = jwt.verify(token, JWT_SECRET) as UserJwtPayload;
 
-        req.auth = decoded; // Attach UserJwtPayload to the Request for downstream use
+        req.userAuth = decoded; // Attach UserJwtPayload to the Request for downstream use
         next();
     } catch (err) {
         logger.debug('JWT verification failed', err);
@@ -40,11 +42,11 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
 
 export const hasRole = (requiredRole: SystemRole) => {
     return (req: Request, res: Response, next: NextFunction) => {
-        if (!req.auth) {
+        if (!req.userAuth) {
             return next(new UnauthorizedError('User not authenticated'));
         }
 
-        const userRole = req.auth.systemRole;
+        const userRole = req.userAuth.systemRole;
         if (userRole !== requiredRole) {
             return next(new ForbiddenError('Insufficient permissions'));
         }

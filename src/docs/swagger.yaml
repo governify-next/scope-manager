@@ -2502,6 +2502,82 @@ components:
                       name: title
                       description: Element title
                       type: string
+        # ── AgreementField ──────────────────────
+        AgreementField:
+            description: |
+                Field that defines part of the structure of an organization's agreements.
+                If `type` is `enum`, `value` contains the array of allowed values.
+                For any other type, `value` is not present.
+            oneOf:
+                - title: Enum agreement field
+                  allOf:
+                      - $ref: '#/components/schemas/FieldBase'
+                      - type: object
+                        required:
+                            - value
+                        properties:
+                            value:
+                                type: array
+                                description: Allowed values for the enum field
+                                items:
+                                    type: string
+                                example:
+                                    - gold
+                                    - silver
+                                    - bronze
+                  example:
+                      name: guaranteeLevel
+                      description: Service level guarantee tier
+                      type: enum
+                      value:
+                          - gold
+                          - silver
+                          - bronze
+                - title: Non-enum agreement field
+                  allOf:
+                      - $ref: '#/components/schemas/FieldBase'
+                  example:
+                      name: minResponseTime
+                      description: Minimum response time in hours
+                      type: number
+
+        AgreementFieldInput:
+            description: |
+                Data to create or update an agreement field.
+                If `type` is `enum`, `value` is required and must be an array.
+                For any other type, `value` must not be sent.
+            oneOf:
+                - title: Enum agreement field
+                  allOf:
+                      - $ref: '#/components/schemas/FieldBase'
+                      - type: object
+                        required:
+                            - value
+                        properties:
+                            value:
+                                type: array
+                                description: Allowed values for the enum field
+                                items:
+                                    type: string
+                                example:
+                                    - gold
+                                    - silver
+                                    - bronze
+                  example:
+                      name: guaranteeLevel
+                      description: Service level guarantee tier
+                      type: enum
+                      value:
+                          - gold
+                          - silver
+                          - bronze
+                - title: Non-enum agreement field
+                  allOf:
+                      - $ref: '#/components/schemas/FieldBase'
+                  example:
+                      name: minResponseTime
+                      description: Minimum response time in hours
+                      type: number
 
         # ── User ─────────────────────
         User:
