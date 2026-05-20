@@ -13,11 +13,11 @@ export const bootEnv = {
     PORT: process.env.PORT || '5901',
 
     // Database URIs
-    MONGO_URI: process.env.MONGO_URI || 'mongodb://localhost:27017/governify',
+    MONGO_URI: process.env.MONGO_URI || 'mongodb://localhost:27017/governify-next',
 
     // JWT configuration
     SERVICE_AUTHENTICATION_ENABLED: process.env.SERVICE_AUTHENTICATION_ENABLED === 'true',
-    JWT_SECRET: process.env.JWT_SECRET || 'governify_secret_key',
+    JWT_SECRET: process.env.JWT_SECRET || 'governify_next_secret_key',
 
     // OpenID Connect configuration
     OIDC_ENABLED: process.env.OIDC_ENABLED === 'true',
