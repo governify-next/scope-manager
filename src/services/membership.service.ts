@@ -1,5 +1,7 @@
 import { Types } from 'mongoose';
 import * as membershipRepository from '../repositories/membership.repository.js';
+import * as userService from '../services/user.service.js';
+import * as organizationService from '../services/organization.service.js';
 import type { ExpandMode } from '../types/membership.types.js';
 
 export const removeRoleFromMemberships = async (roleId: Types.ObjectId) => {
@@ -36,6 +38,10 @@ export const findMembership = async (orgId: Types.ObjectId, userId: Types.Object
     return await membershipRepository.findMembership(orgId, userId);
 };
 
+export const findMembershipsByUser = async (userId: Types.ObjectId) => {
+    return await membershipRepository.findMembershipsByUser(userId);
+};
+
 export const findEspecificRole = async (
     orgId: Types.ObjectId,
     userId: Types.ObjectId,
@@ -50,4 +56,16 @@ export const removeMembershipsByOrganization = async (orgId: Types.ObjectId) => 
 
 export const getMembershipsByOrganization = async (orgId: Types.ObjectId, expand: ExpandMode) => {
     return await membershipRepository.getMembershipsByOrganization(orgId, expand);
+};
+
+export const getOrgsUserBelongs = async (username: string) => {
+    const user = await userService.getUserByUsername(username);
+    const memberships = await findMembershipsByUser(user!._id);
+    const organizations = await Promise.all(
+        memberships.map(
+            async (membership) =>
+                await organizationService.getOrganizationById(membership.organizationId),
+        ),
+    );
+    return organizations;
 };

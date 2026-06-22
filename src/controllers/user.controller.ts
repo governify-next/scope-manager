@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/user.service.js';
 import { sendSuccess } from '../utils/standardResponse.js';
 import { NotFoundError } from '../utils/customErrors.js';
+import * as membershipService from '../services/membership.service.js';
 
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -75,5 +76,15 @@ export const oidcCallback = async (req: Request, res: Response, next: NextFuncti
         return sendSuccess(res, { data: { token } });
     } catch (err) {
         next(err);
+    }
+};
+
+export const getOrgsUserBelongs = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const username = req.params.username;
+        const organizations = await membershipService.getOrgsUserBelongs(username);
+        return sendSuccess(res, { data: organizations });
+    } catch (error) {
+        next(error);
     }
 };

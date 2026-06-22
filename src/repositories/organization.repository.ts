@@ -1,6 +1,7 @@
 import Organization, { IOrganization } from '../models/organization.model.js';
 import { DuplicateKeyError } from '../utils/customErrors.js';
 import type { FieldArrayName } from '../types/organization.types.js';
+import { Types } from 'mongoose';
 
 export const createOrganization = async (data: Partial<IOrganization>) => {
     try {
@@ -27,7 +28,7 @@ export const getOrganizations = async () => {
     return await Organization.find();
 };
 
-export const getOrganizationById = async (organizationId: string) => {
+export const getOrganizationById = async (organizationId: Types.ObjectId) => {
     return await Organization.findById(organizationId);
 };
 

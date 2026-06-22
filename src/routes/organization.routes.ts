@@ -150,7 +150,7 @@ organizationRoutes.get(
     '/organizations/:orgName/members',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    //hasOrgRole('admin'),
     validateExpand,
     organizationController.getMembers,
 );
