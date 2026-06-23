@@ -77,3 +77,6 @@ export const getMembershipsByOrganization = async (orgId: Types.ObjectId, expand
 
     return await query.exec();
 };
+export const findMembershipsByUser = async (userId: Types.ObjectId) => {
+    return await Membership.find({ userId: userId });
+};

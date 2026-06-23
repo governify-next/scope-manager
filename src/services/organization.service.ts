@@ -34,7 +34,7 @@ export const getOrganizations = async () => {
     return await organizationRepository.getOrganizations();
 };
 
-export const getOrganizationById = async (organizationId: string) => {
+export const getOrganizationById = async (organizationId: Types.ObjectId) => {
     return await organizationRepository.getOrganizationById(organizationId);
 };
 
@@ -152,7 +152,7 @@ export const getMembers = async (orgName: string, expand: ExpandMode) => {
         expand,
     );
 
-    // Sin expansión, devolvemos las memberships tal cual están guardadaas
+    // Sin expansión, devolvemos las memberships tal cual están guardadas
     if (expand === 'none') return memberships;
 
     // Con expansión, reemplazamos rolesId por roles resueltos desde la organización
