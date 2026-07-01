@@ -16,14 +16,15 @@ const validateElementFields = async (req: Request, res: Response, next: NextFunc
 
         const elementFieldsMap = new Map(organization!.elementFields.map((ef) => [ef.name, ef]));
 
-        const errors = [];
+        const validationErrors = [];
+        const notFoundErrors = [];
 
         // Validate each object in the fields array
         for (let i = 0; i < fields.length; i++) {
             const fieldObj = fields[i];
 
             if (!fieldObj || typeof fieldObj !== 'object' || Array.isArray(fieldObj)) {
-                errors.push({
+                validationErrors.push({
                     msg: `fields[${i}] must be an object`,
                     path: `fields[${i}]`,
                 });
@@ -32,15 +33,21 @@ const validateElementFields = async (req: Request, res: Response, next: NextFunc
             const orgField = elementFieldsMap.get(fieldObj.name);
 
             if (!orgField) {
-                errors.push({
+                notFoundErrors.push({
                     msg: `Field named '${fieldObj.name}' is not defined in organization's elementFields`,
                     path: `fields[${i}]`,
                 });
             }
         }
 
-        if (errors.length > 0) {
-            return next(new ValidationError('Field validation failed', errors));
+        if (validationErrors.length > 0) {
+            return next(new ValidationError('Field validation failed', validationErrors));
+        }
+
+        if (notFoundErrors.length > 0) {
+            return next(
+                new NotFoundError('Element field not found in organization', notFoundErrors),
+            );
         }
 
         next();
@@ -60,12 +67,13 @@ const validateElementPermissions = async (req: Request, res: Response, next: Nex
 
         const organizationRoles = new Set(organization!.roles.map((r) => r.name));
 
-        const errors = [];
+        const validationErrors = [];
+        const notFoundErrors = [];
 
         // Validate each permission type
         for (const [permType, rolesList] of Object.entries(permissions)) {
             if (!Array.isArray(rolesList)) {
-                errors.push({
+                validationErrors.push({
                     msg: `Permission '${permType}' must be an array of role names`,
                     path: `permissions.${permType}`,
                     value: rolesList,
@@ -76,7 +84,7 @@ const validateElementPermissions = async (req: Request, res: Response, next: Nex
             // Check each role exists in organization
             for (const roleName of rolesList) {
                 if (typeof roleName !== 'string') {
-                    errors.push({
+                    validationErrors.push({
                         msg: `Role name in '${permType}' must be a string`,
                         path: `permissions.${permType}`,
                         value: roleName,
@@ -85,7 +93,7 @@ const validateElementPermissions = async (req: Request, res: Response, next: Nex
                 }
 
                 if (!organizationRoles.has(roleName)) {
-                    errors.push({
+                    notFoundErrors.push({
                         msg: `Role '${roleName}' does not exist in organization`,
                         path: `permissions.${permType}`,
                         value: roleName,
@@ -94,8 +102,14 @@ const validateElementPermissions = async (req: Request, res: Response, next: Nex
             }
         }
 
-        if (errors.length > 0) {
-            return next(new ValidationError('Permission validation failed', errors));
+        if (validationErrors.length > 0) {
+            return next(new ValidationError('Permission validation failed', validationErrors));
+        }
+
+        if (notFoundErrors.length > 0) {
+            return next(
+                new NotFoundError('Permission role not found in organization', notFoundErrors),
+            );
         }
 
         next();

@@ -1,20 +1,23 @@
 import { body, validationResult } from 'express-validator';
 import { type Request, type Response, type NextFunction } from 'express';
+import { Types } from 'mongoose';
 import {
     ValidationError,
     DuplicateKeyError,
     LimitError,
     ForbiddenError,
+    NotFoundError,
 } from '../utils/customErrors.js';
 import { getOrganizationByName } from '../services/organization.service.js';
 import { findEspecificRole } from '../services/membership.service.js';
 import { IOrganization } from '../models/organization.model.js';
 import { bootEnv } from '../config/bootConfig.js';
+import * as authenticatorIntegration from '../integrations/authenticator.integration.js';
 
 // Helper
 export async function getOrganizationOrFail(orgName: string): Promise<IOrganization> {
     const org = await getOrganizationByName(orgName);
-    if (!org) throw new ValidationError(`Organization with name ${orgName} does not exist`);
+    if (!org) throw new NotFoundError(`Organization with name '${orgName}' not found`);
     return org;
 }
 
@@ -138,7 +141,7 @@ export const existingRole = (source: 'body' | 'params') => {
 
             if (!role)
                 return next(
-                    new ValidationError(
+                    new NotFoundError(
                         `Role '${roleName}' not found in organization '${organization.name}'`,
                     ),
                 );
@@ -149,6 +152,64 @@ export const existingRole = (source: 'body' | 'params') => {
     };
 };
 
+export const validateExistingRoleNamesBody = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    if (!Array.isArray(req.body)) {
+        return next(new ValidationError('Body must be an array of role names'));
+    }
+
+    const invalidRoleName = req.body.find((roleName) => typeof roleName !== 'string');
+    if (invalidRoleName !== undefined) {
+        return next(new ValidationError('Each role name must be a string'));
+    }
+
+    const roleNames = req.body as string[];
+    const duplicatedRoleName = roleNames.find(
+        (roleName, index) => roleNames.indexOf(roleName) !== index,
+    );
+    if (duplicatedRoleName) {
+        return next(new ValidationError(`Role '${duplicatedRoleName}' is duplicated`));
+    }
+
+    try {
+        const organization = await getOrganizationOrFail(req.params.orgName);
+        const organizationRoles = new Set(organization.roles.map((role) => role.name));
+        const missingRole = req.body.find((roleName) => !organizationRoles.has(roleName));
+
+        if (missingRole) {
+            return next(
+                new NotFoundError(
+                    `Role '${missingRole}' not found in organization '${organization.name}'`,
+                ),
+            );
+        }
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const creatorMustKeepAdminRole = async (req: Request, res: Response, next: NextFunction) => {
+    if (req.body.includes('admin')) return next();
+
+    try {
+        const organization = await getOrganizationOrFail(req.params.orgName);
+        const user = await authenticatorIntegration.getUserByUsername(req.params.username);
+
+        if (organization.createdBy?.toString() === user._id.toString()) {
+            return next(new ForbiddenError('Organization creator must keep the admin role'));
+        }
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
 export const existingField = (arrayName: 'elementFields' | 'agreementFields') => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -157,7 +218,7 @@ export const existingField = (arrayName: 'elementFields' | 'agreementFields') =>
 
             if (!field)
                 return next(
-                    new ValidationError(
+                    new NotFoundError(
                         `${arrayName} '${req.params.fieldName}' not found in organization '${organization.name}'`,
                     ),
                 );
@@ -236,13 +297,17 @@ export const hasOrgRole = (roleName: string) => {
 
             if (!roleId)
                 return next(
-                    new ValidationError(
+                    new NotFoundError(
                         `Role '${roleName}' not found in organization '${organization.name}'`,
                     ),
                 );
 
             // Buscamos si el usuario tiene ese rol en la organización
-            const hasRole = await findEspecificRole(organization._id, req.userAuth!.userId, roleId);
+            const hasRole = await findEspecificRole(
+                organization._id,
+                new Types.ObjectId(req.userAuth!.userId),
+                roleId,
+            );
 
             if (!hasRole)
                 return next(
@@ -263,3 +328,30 @@ export const notAdminRole = async (req: Request, res: Response, next: NextFuncti
 
     next();
 };
+
+export const validateSearchOrganizations = [
+    body('nameOrDisplayName')
+        .optional()
+        .isString()
+        .withMessage('Name or displayName filter must be a string')
+        .isLength({ min: 1, max: 200 })
+        .withMessage('Name or displayName filter must be between 1 and 200 characters long'),
+    body('name')
+        .optional()
+        .isString()
+        .withMessage('Name filter must be a string')
+        .isLength({ min: 1, max: 100 })
+        .withMessage('Name filter must be between 1 and 100 characters long'),
+    body('displayName')
+        .optional()
+        .isString()
+        .withMessage('DisplayName filter must be a string')
+        .isLength({ min: 1, max: 200 })
+        .withMessage('DisplayName filter must be between 1 and 200 characters long'),
+    (req: Request, res: Response, next: NextFunction) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty())
+            return next(new ValidationError('Validation failed', errors.array()));
+        next();
+    },
+];

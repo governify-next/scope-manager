@@ -2,12 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import * as organizationService from '../services/organization.service.js';
 import { sendSuccess } from '../utils/standardResponse.js';
 import type { ExpandMode } from '../types/membership.types.js';
+import { Types } from 'mongoose';
+import { getPaginationQuery } from '../utils/pagination.js';
 
 export const createOrganization = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const organization = await organizationService.createOrganization(
             req.body,
-            req.userAuth!.userId,
+            new Types.ObjectId(req.userAuth!.userId),
         );
         return sendSuccess(res, {
             data: organization,
@@ -21,8 +23,29 @@ export const createOrganization = async (req: Request, res: Response, next: Next
 
 export const getOrganizations = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const organizations = await organizationService.getOrganizations();
-        return sendSuccess(res, { data: organizations });
+        const { page, limit } = getPaginationQuery(req);
+        const { organizations, pagination } = await organizationService.getOrganizations(
+            page,
+            limit,
+        );
+        return sendSuccess(res, { data: organizations, pagination });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const searchOrganizations = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { page, limit } = getPaginationQuery(req);
+        const { organizations, pagination } = await organizationService.searchOrganizations(
+            page,
+            limit,
+            req.body ?? {},
+            req.userAuth!.systemRole,
+            req.userAuth!.userId,
+        );
+
+        return sendSuccess(res, { data: organizations, pagination });
     } catch (err) {
         next(err);
     }
@@ -30,7 +53,9 @@ export const getOrganizations = async (req: Request, res: Response, next: NextFu
 
 export const getOrganizationByName = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const organization = await organizationService.getOrganizationByName(req.params.orgName);
+        const organization = await organizationService.getOrganizationByNameWithMembers(
+            req.params.orgName,
+        );
         return sendSuccess(res, { data: organization });
     } catch (err) {
         next(err);
@@ -218,27 +243,31 @@ export const removeUserFromOrganization = async (
     }
 };
 
-export const addRoleToUser = async (req: Request, res: Response, next: NextFunction) => {
+export const isCurrentUserOrganizationAdmin = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
     try {
-        const organization = await organizationService.addRoleToUser(
+        const isAdmin = await organizationService.isOrganizationAdmin(
             req.params.orgName,
-            req.params.username,
-            req.body.roleName,
+            req.userAuth!.userId,
+            req.userAuth!.systemRole,
         );
-        return sendSuccess(res, { data: organization, message: 'Role added to user' });
+        return sendSuccess(res, { data: { isAdmin } });
     } catch (err) {
         next(err);
     }
 };
 
-export const removeRoleFromUser = async (req: Request, res: Response, next: NextFunction) => {
+export const replaceUserRoles = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const organization = await organizationService.removeRoleFromUser(
+        const membership = await organizationService.replaceUserRoles(
             req.params.orgName,
             req.params.username,
-            req.params.roleName,
+            req.body,
         );
-        return sendSuccess(res, { data: organization, message: 'Role removed from user' });
+        return sendSuccess(res, { data: membership, message: 'User roles updated' });
     } catch (err) {
         next(err);
     }

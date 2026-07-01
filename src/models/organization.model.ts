@@ -44,6 +44,7 @@ export interface IOrganization extends Document {
     name: string;
     displayName: string;
     description: string;
+    createdBy: Types.ObjectId;
     elementFields: {
         name: string;
         description: string;
@@ -70,6 +71,7 @@ const organizationSchema = new Schema<IOrganization>(
         name: { type: String, required: true, unique: true },
         displayName: { type: String, default: '' },
         description: { type: String, required: true },
+        createdBy: { type: Schema.Types.ObjectId, required: true },
         elementFields: { type: [fieldSchema], default: [] },
         agreementFields: { type: [fieldSchema], default: [] },
         roles: {

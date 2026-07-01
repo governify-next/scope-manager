@@ -50,14 +50,14 @@ export const assignRole = async (
     );
 };
 
-export const unassignRole = async (
+export const replaceRoles = async (
     organizationId: Types.ObjectId,
     userId: Types.ObjectId,
-    roleId: Types.ObjectId,
+    rolesId: Types.ObjectId[],
 ) => {
     return await Membership.findOneAndUpdate(
         { organizationId, userId },
-        { $pull: { rolesId: roleId } },
+        { $set: { rolesId } },
         { new: true },
     );
 };
@@ -70,13 +70,23 @@ export const getMembershipsByOrganization = async (orgId: Types.ObjectId, expand
     const query = Membership.find({ organizationId: orgId });
 
     if (expand === 'full') {
-        query.populate('userId').populate('organizationId');
+        query.populate('organizationId');
     } else if (expand === 'names') {
-        query.populate('userId', 'username').populate('organizationId', 'name');
+        query.populate('organizationId', 'name');
     }
 
     return await query.exec();
 };
 export const findMembershipsByUser = async (userId: Types.ObjectId) => {
     return await Membership.find({ userId: userId });
+};
+
+export const countMembershipsByOrganizations = async (orgIds: Types.ObjectId[]) => {
+    if (orgIds.length === 0) return [];
+
+    return await Membership.aggregate<{ organizationId: Types.ObjectId; members: number }>([
+        { $match: { organizationId: { $in: orgIds } } },
+        { $group: { _id: '$organizationId', members: { $sum: 1 } } },
+        { $project: { _id: 0, organizationId: '$_id', members: 1 } },
+    ]);
 };

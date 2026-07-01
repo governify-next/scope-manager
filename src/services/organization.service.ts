@@ -1,16 +1,37 @@
 import * as organizationRepository from '../repositories/organization.repository.js';
 import { IOrganization } from '../models/organization.model.js';
-import type { FieldArrayName } from '../types/organization.types.js';
+import type { FieldArrayName, OrganizationSearchFilters } from '../types/organization.types.js';
 import type { ExpandMode } from '../types/membership.types.js';
 import * as membershipService from '../services/membership.service.js';
 import * as elementService from '../services/element.service.js';
 import { Types } from 'mongoose';
-import { getUserByUsername } from './user.service.js';
-import { DuplicateKeyError, NotFoundError } from '../utils/customErrors.js';
+import * as authenticatorIntegration from '../integrations/authenticator.integration.js';
+import { createPagination } from '../utils/pagination.js';
+import { SystemRole } from '../types/systemRole.js';
+import { ForbiddenError } from '../utils/customErrors.js';
 
 // Para trabajo interno en la organización
 export const getOrganizationByName = async (orgName: string) => {
     return await organizationRepository.getOrganizationByName(orgName);
+};
+
+const addMembersCount = async (organizations: IOrganization[]) => {
+    const memberCounts = await membershipService.countMembershipsByOrganizations(
+        organizations.map((organization) => organization._id as Types.ObjectId),
+    );
+
+    return organizations.map((organization) => ({
+        ...organization.toObject(),
+        members: memberCounts.get(organization._id.toString()) ?? 0,
+    }));
+};
+
+export const getOrganizationByNameWithMembers = async (orgName: string) => {
+    const organization = await getOrganizationByName(orgName);
+    if (!organization) return organization;
+
+    const [organizationWithMembers] = await addMembersCount([organization]);
+    return organizationWithMembers;
 };
 
 export const createOrganization = async (data: Partial<IOrganization>, userId: Types.ObjectId) => {
@@ -20,6 +41,7 @@ export const createOrganization = async (data: Partial<IOrganization>, userId: T
         name,
         displayName,
         description,
+        createdBy: userId,
         roles: [{ name: 'admin', description: 'Organization Administrator' }],
     });
     // Obtenemos el id del rol admin generado por mongoose
@@ -30,8 +52,42 @@ export const createOrganization = async (data: Partial<IOrganization>, userId: T
     return createdOrganization;
 };
 
-export const getOrganizations = async () => {
-    return await organizationRepository.getOrganizations();
+export const getOrganizations = async (page: number, limit: number) => {
+    const { organizations, totalItems } = await organizationRepository.getOrganizations(
+        page,
+        limit,
+    );
+    return {
+        organizations: await addMembersCount(organizations),
+        pagination: createPagination(page, limit, totalItems),
+    };
+};
+
+export const searchOrganizations = async (
+    page: number,
+    limit: number,
+    filters: OrganizationSearchFilters,
+    systemRole: string,
+    userId: string,
+) => {
+    const organizationIds =
+        systemRole === SystemRole.ADMIN
+            ? undefined
+            : (await membershipService.findMembershipsByUser(new Types.ObjectId(userId))).map(
+                  (membership) => membership.organizationId,
+              );
+
+    const { organizations, totalItems } = await organizationRepository.searchOrganizations(
+        page,
+        limit,
+        filters,
+        organizationIds,
+    );
+
+    return {
+        organizations: await addMembersCount(organizations),
+        pagination: createPagination(page, limit, totalItems),
+    };
 };
 
 export const getOrganizationById = async (organizationId: Types.ObjectId) => {
@@ -111,7 +167,7 @@ export const deleteField = async (
 
 export const addUserToOrganization = async (orgName: string, username: string) => {
     // Obtenemos id de usuario
-    const user = await getUserByUsername(username);
+    const user = await authenticatorIntegration.getUserByUsername(username);
     const userId = user!._id;
     // Obtenemos id de la organización
     const organization = await getOrganizationByName(orgName);
@@ -122,27 +178,44 @@ export const addUserToOrganization = async (orgName: string, username: string) =
 
 export const removeUserFromOrganization = async (orgName: string, username: string) => {
     const organization = await getOrganizationByName(orgName);
-    const user = await getUserByUsername(username);
+    const user = await authenticatorIntegration.getUserByUsername(username);
     const organizationId = organization!._id;
     const userId = user!._id;
+
+    if (organization!.createdBy.toString() === userId.toString()) {
+        throw new ForbiddenError(
+            'The organization creator cannot be removed from the organization',
+        );
+    }
+
     return await membershipService.removeMembership(organizationId, userId);
 };
 
-export const addRoleToUser = async (orgName: string, username: string, roleName: string) => {
-    const user = await getUserByUsername(username);
+export const isOrganizationAdmin = async (orgName: string, userId: string, systemRole: string) => {
+    if (systemRole === SystemRole.ADMIN) return true;
+
     const organization = await getOrganizationByName(orgName);
-    const role = organization?.roles.find((r) => r.name === roleName);
+    const adminRole = organization!.roles.find((role) => role.name === 'admin');
 
-    const userHasRole = await membershipService.findEspecificRole(
+    if (!adminRole) return false;
+
+    const membership = await membershipService.findEspecificRole(
         organization!._id,
-        user!._id,
-        role!._id!,
+        new Types.ObjectId(userId),
+        adminRole._id!,
     );
-    if (userHasRole) {
-        throw new DuplicateKeyError('User already has that role in the organization');
-    }
 
-    return await membershipService.assignRole(user!._id, organization!._id, role!._id!);
+    return Boolean(membership);
+};
+
+export const replaceUserRoles = async (orgName: string, username: string, roleNames: string[]) => {
+    const user = await authenticatorIntegration.getUserByUsername(username);
+    const organization = await getOrganizationByName(orgName);
+    const rolesId = roleNames.map(
+        (roleName) => organization!.roles.find((role) => role.name === roleName)!._id!,
+    );
+
+    return await membershipService.replaceRoles(organization!._id, user!._id, rolesId);
 };
 
 export const getMembers = async (orgName: string, expand: ExpandMode) => {
@@ -155,30 +228,22 @@ export const getMembers = async (orgName: string, expand: ExpandMode) => {
     // Sin expansión, devolvemos las memberships tal cual están guardadas
     if (expand === 'none') return memberships;
 
-    // Con expansión, reemplazamos rolesId por roles resueltos desde la organización
-    return memberships.map((m) => ({
-        ...m.toObject(), // convertimos el documento de mongoose a un objeto plano (solo datos) y copiamos sus propiedades en un objeto nuevo
-        rolesId: undefined, // sobreescribimos los id de roles a undefined (los eliminamos)
-        roles: m.rolesId.map((id) => {
-            const role = organization!.roles.find((r) => r._id!.toString() === id.toString());
-            return expand === 'full' ? role : { _id: role?._id, name: role?.name };
+    // Con expansión, reemplazamos ids por datos resueltos desde organization y authenticator
+    return await Promise.all(
+        memberships.map(async (m) => {
+            const user = await authenticatorIntegration.getUserById(m.userId.toString());
+
+            return {
+                ...m.toObject(), // convertimos el documento de mongoose a un objeto plano (solo datos) y copiamos sus propiedades en un objeto nuevo
+                userId: expand === 'full' ? user : { _id: user._id, username: user.username },
+                rolesId: undefined, // sobreescribimos los id de roles a undefined (los eliminamos)
+                roles: m.rolesId.map((id) => {
+                    const role = organization!.roles.find(
+                        (r) => r._id!.toString() === id.toString(),
+                    );
+                    return expand === 'full' ? role : { _id: role?._id, name: role?.name };
+                }),
+            };
         }),
-    }));
-};
-
-export const removeRoleFromUser = async (orgName: string, username: string, roleName: string) => {
-    const user = await getUserByUsername(username);
-    const organization = await getOrganizationByName(orgName);
-    const role = organization?.roles.find((r) => r.name === roleName);
-
-    const userHasRole = await membershipService.findEspecificRole(
-        organization!._id,
-        user!._id,
-        role!._id!,
     );
-    if (!userHasRole) {
-        throw new NotFoundError('User does not have that role in the organization');
-    }
-
-    return await membershipService.unassignRole(organization!._id, user!._id, role!._id!);
 };

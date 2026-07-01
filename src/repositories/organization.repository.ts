@@ -1,6 +1,6 @@
 import Organization, { IOrganization } from '../models/organization.model.js';
 import { DuplicateKeyError } from '../utils/customErrors.js';
-import type { FieldArrayName } from '../types/organization.types.js';
+import type { FieldArrayName, OrganizationSearchFilters } from '../types/organization.types.js';
 import { Types } from 'mongoose';
 
 export const createOrganization = async (data: Partial<IOrganization>) => {
@@ -24,8 +24,43 @@ export const createOrganization = async (data: Partial<IOrganization>) => {
     }
 };
 
-export const getOrganizations = async () => {
-    return await Organization.find();
+export const getOrganizations = async (page: number, limit: number) => {
+    const skip = (page - 1) * limit;
+    const [organizations, totalItems] = await Promise.all([
+        Organization.find().skip(skip).limit(limit),
+        Organization.countDocuments(),
+    ]);
+    return { organizations, totalItems };
+};
+
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export const searchOrganizations = async (
+    page: number,
+    limit: number,
+    filters: OrganizationSearchFilters,
+    organizationIds?: Types.ObjectId[],
+) => {
+    const skip = (page - 1) * limit;
+    const query: Record<string, unknown> = {};
+    if (organizationIds) {
+        query._id = { $in: organizationIds };
+    }
+    if (filters.nameOrDisplayName) {
+        const nameOrDisplayNameRegex = new RegExp(escapeRegex(filters.nameOrDisplayName), 'i');
+        query.$or = [{ name: nameOrDisplayNameRegex }, { displayName: nameOrDisplayNameRegex }];
+    }
+    if (filters.name) {
+        query.name = new RegExp(escapeRegex(filters.name), 'i');
+    }
+    if (filters.displayName) {
+        query.displayName = new RegExp(escapeRegex(filters.displayName), 'i');
+    }
+    const [organizations, totalItems] = await Promise.all([
+        Organization.find(query).skip(skip).limit(limit),
+        Organization.countDocuments(query),
+    ]);
+    return { organizations, totalItems };
 };
 
 export const getOrganizationById = async (organizationId: Types.ObjectId) => {
