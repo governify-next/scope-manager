@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
+import type { IField, IRole, IScopeConfig } from '../types/organization.types.js';
 
 // Subdocumentos
 
@@ -33,6 +34,24 @@ const fieldSchema = new Schema(
     { _id: false },
 );
 
+const scopeTypeSchema = new Schema(
+    {
+        name: { type: String, required: true },
+        description: { type: String },
+        childTypes: { type: [String], default: [] },
+        auditFields: { type: [fieldSchema], default: [] },
+    },
+    { _id: false },
+);
+
+const scopeConfigSchema = new Schema(
+    {
+        rootTypes: { type: [String], default: [] },
+        scopeTypes: { type: [scopeTypeSchema], default: [] },
+    },
+    { _id: false },
+);
+
 const roleSchema = new Schema({
     name: { type: String, required: true },
     description: { type: String, required: true },
@@ -45,23 +64,9 @@ export interface IOrganization extends Document {
     displayName: string;
     description: string;
     createdBy: Types.ObjectId;
-    elementFields: {
-        name: string;
-        description: string;
-        type: string;
-        value?: unknown;
-    }[];
-    agreementFields: {
-        name: string;
-        description: string;
-        type: string;
-        value?: unknown;
-    }[];
-    roles: {
-        _id?: Types.ObjectId;
-        name: string;
-        description: string;
-    }[];
+    scopeConfig: IScopeConfig;
+    agreementFields: IField[];
+    roles: IRole[];
 }
 
 // Esquema principal
@@ -72,7 +77,7 @@ const organizationSchema = new Schema<IOrganization>(
         displayName: { type: String, default: '' },
         description: { type: String, required: true },
         createdBy: { type: Schema.Types.ObjectId, required: true },
-        elementFields: { type: [fieldSchema], default: [] },
+        scopeConfig: { type: scopeConfigSchema, default: () => ({}) },
         agreementFields: { type: [fieldSchema], default: [] },
         roles: {
             type: [roleSchema],

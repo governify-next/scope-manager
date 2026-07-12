@@ -1,7 +1,5 @@
 import { Types } from 'mongoose';
 import * as membershipRepository from '../repositories/membership.repository.js';
-import * as authenticatorIntegration from '../integrations/authenticator.integration.js';
-import * as organizationService from '../services/organization.service.js';
 import type { ExpandMode } from '../types/membership.types.js';
 
 export const removeRoleFromMemberships = async (roleId: Types.ObjectId) => {
