@@ -1,5 +1,5 @@
 import { bootEnv } from '../config/bootConfig.js';
-import { serviceHeaders } from '../utils/serviceAuth.js';
+import { getServiceHeaders } from '../utils/serviceAuth.js';
 import { NotFoundError } from '../utils/customErrors.js';
 
 const AUTHENTICATOR_SERVICE_URL = bootEnv.AUTHENTICATOR_SERVICE_URL;
@@ -7,7 +7,7 @@ const AUTHENTICATOR_SERVICE_URL = bootEnv.AUTHENTICATOR_SERVICE_URL;
 export const getUserByUsername = async (username: string) => {
     const response = await fetch(`${AUTHENTICATOR_SERVICE_URL}/api/v1/users/username/${username}`, {
         method: 'GET',
-        headers: serviceHeaders,
+        headers: await getServiceHeaders(),
     });
 
     const result = await response.json();
@@ -28,7 +28,7 @@ export const getUserByUsername = async (username: string) => {
 export const getUserById = async (userId: string) => {
     const response = await fetch(`${AUTHENTICATOR_SERVICE_URL}/api/v1/users/${userId}`, {
         method: 'GET',
-        headers: serviceHeaders,
+        headers: await getServiceHeaders(),
     });
 
     const result = await response.json();
