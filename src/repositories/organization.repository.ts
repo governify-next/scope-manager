@@ -1,6 +1,11 @@
 import Organization, { IOrganization } from '../models/organization.model.js';
 import { DuplicateKeyError } from '../utils/customErrors.js';
-import type { IField, IRole, OrganizationSearchFilters } from '../types/organization.types.js';
+import type {
+    FieldArrayName,
+    IField,
+    IRole,
+    OrganizationSearchFilters,
+} from '../types/organization.types.js';
 import { Types } from 'mongoose';
 
 export const createOrganization = async (data: Partial<IOrganization>) => {
@@ -125,22 +130,29 @@ export const deleteRole = async (orgName: string, roleName: string) => {
     );
 };
 
-export const addAgreementField = async (orgName: string, field: IField) => {
+// Fields genéricos para que scopeFields y agreementFields compartan la misma lógica
+
+export const addField = async (orgName: string, arrayName: FieldArrayName, field: IField) => {
     return await Organization.findOneAndUpdate(
         { name: orgName },
-        { $push: { agreementFields: field } },
+        { $push: { [arrayName]: field } },
         { new: true },
     );
 };
 
-export const updateAgreementField = async (orgName: string, oldFieldName: string, data: IField) => {
+export const updateField = async (
+    orgName: string,
+    arrayName: FieldArrayName,
+    oldFieldName: string,
+    data: IField,
+) => {
     const setClause: Record<string, unknown> = {
-        'agreementFields.$[fieldElem].name': data.name,
-        'agreementFields.$[fieldElem].description': data.description,
-        'agreementFields.$[fieldElem].type': data.type,
+        [`${arrayName}.$[fieldElem].name`]: data.name,
+        [`${arrayName}.$[fieldElem].description`]: data.description,
+        [`${arrayName}.$[fieldElem].type`]: data.type,
     };
     // Solo se actualiza value si fue enviado en el body
-    if ('value' in data) setClause['agreementFields.$[fieldElem].value'] = data.value;
+    if ('value' in data) setClause[`${arrayName}.$[fieldElem].value`] = data.value;
 
     return await Organization.findOneAndUpdate(
         { name: orgName },
@@ -149,10 +161,14 @@ export const updateAgreementField = async (orgName: string, oldFieldName: string
     );
 };
 
-export const deleteAgreementField = async (orgName: string, fieldName: string) => {
+export const deleteField = async (
+    orgName: string,
+    arrayName: FieldArrayName,
+    fieldName: string,
+) => {
     return await Organization.findOneAndUpdate(
         { name: orgName },
-        { $pull: { agreementFields: { name: fieldName } } },
+        { $pull: { [arrayName]: { name: fieldName } } },
         { new: true },
     );
 };

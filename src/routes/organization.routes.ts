@@ -6,11 +6,11 @@ import {
     validateField,
     existingOrganization,
     existingRole,
-    existingAgreementField,
+    existingField,
     validateExistingRoleNamesBody,
     uniqueRole,
     maxRoles,
-    uniqueAgreementField,
+    uniqueField,
     hasOrgRole,
     notAdminRole,
     validateSearchOrganizations,
@@ -104,6 +104,35 @@ organizationRoutes.delete(
     organizationController.deleteRole,
 );
 
+// ScopeFields
+organizationRoutes.post(
+    '/organizations/:orgName/scopeFields',
+    checkUserAuthentication,
+    existingOrganization,
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.ADMIN)),
+    validateField,
+    uniqueField('scopeFields'),
+    organizationController.addScopeField,
+);
+organizationRoutes.put(
+    '/organizations/:orgName/scopeFields/:fieldName',
+    checkUserAuthentication,
+    existingOrganization,
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.ADMIN)),
+    existingField('scopeFields'),
+    validateField,
+    uniqueField('scopeFields'),
+    organizationController.updateScopeField,
+);
+organizationRoutes.delete(
+    '/organizations/:orgName/scopeFields/:fieldName',
+    checkUserAuthentication,
+    existingOrganization,
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.ADMIN)),
+    existingField('scopeFields'),
+    organizationController.deleteScopeField,
+);
+
 // AgreementFields
 organizationRoutes.post(
     '/organizations/:orgName/agreementFields',
@@ -111,7 +140,7 @@ organizationRoutes.post(
     existingOrganization,
     anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.ADMIN)),
     validateField,
-    uniqueAgreementField,
+    uniqueField('agreementFields'),
     organizationController.addAgreementField,
 );
 organizationRoutes.put(
@@ -119,9 +148,9 @@ organizationRoutes.put(
     checkUserAuthentication,
     existingOrganization,
     anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.ADMIN)),
-    existingAgreementField,
+    existingField('agreementFields'),
     validateField,
-    uniqueAgreementField,
+    uniqueField('agreementFields'),
     organizationController.updateAgreementField,
 );
 organizationRoutes.delete(
@@ -129,7 +158,7 @@ organizationRoutes.delete(
     checkUserAuthentication,
     existingOrganization,
     anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.ADMIN)),
-    existingAgreementField,
+    existingField('agreementFields'),
     organizationController.deleteAgreementField,
 );
 

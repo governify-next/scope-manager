@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
-import type { IField, IRole, IScopeConfig } from '../types/organization.types.js';
+import type { IField, IRole } from '../types/organization.types.js';
 
 // Subdocumentos
 
@@ -34,24 +34,6 @@ const fieldSchema = new Schema(
     { _id: false },
 );
 
-const scopeTypeSchema = new Schema(
-    {
-        name: { type: String, required: true },
-        description: { type: String },
-        childTypes: { type: [String], default: [] },
-        auditFields: { type: [fieldSchema], default: [] },
-    },
-    { _id: false },
-);
-
-const scopeConfigSchema = new Schema(
-    {
-        rootTypes: { type: [String], default: [] },
-        scopeTypes: { type: [scopeTypeSchema], default: [] },
-    },
-    { _id: false },
-);
-
 const roleSchema = new Schema({
     name: { type: String, required: true },
     description: { type: String, required: true },
@@ -64,7 +46,7 @@ export interface IOrganization extends Document {
     displayName: string;
     description: string;
     createdBy: Types.ObjectId;
-    scopeConfig: IScopeConfig;
+    scopeFields: IField[];
     agreementFields: IField[];
     roles: IRole[];
 }
@@ -77,7 +59,7 @@ const organizationSchema = new Schema<IOrganization>(
         displayName: { type: String, default: '' },
         description: { type: String, required: true },
         createdBy: { type: Schema.Types.ObjectId, required: true },
-        scopeConfig: { type: scopeConfigSchema, default: () => ({}) },
+        scopeFields: { type: [fieldSchema], default: [] },
         agreementFields: { type: [fieldSchema], default: [] },
         roles: {
             type: [roleSchema],

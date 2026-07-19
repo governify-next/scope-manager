@@ -3,10 +3,7 @@ import * as scopeController from '../controllers/scope.controller.js';
 import {
     existingScope,
     validateScope,
-    validateScopeAuditConfig,
-    validateScopeGrammar,
     validateScopePermissionRoles,
-    validateScopesTreeGrammar,
 } from '../middlewares/scope.validator.js';
 import { existingOrganization } from '../middlewares/organization.validator.js';
 
@@ -16,13 +13,11 @@ scopeRoutes.post(
     '/organizations/:orgName/scopes',
     existingOrganization,
     validateScope,
-    validateScopeGrammar,
     scopeController.createScope,
 );
 scopeRoutes.post(
     '/organizations/:orgName/scopes/tree',
     existingOrganization,
-    validateScopesTreeGrammar,
     scopeController.createScopes,
 );
 scopeRoutes.get(
@@ -40,7 +35,6 @@ scopeRoutes.put(
     existingOrganization,
     existingScope(),
     validateScope,
-    validateScopeAuditConfig,
     scopeController.updateScope,
 );
 scopeRoutes.delete(

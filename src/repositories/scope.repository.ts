@@ -94,7 +94,7 @@ export const addRoleToScopePermission = async (
     return scope;
 };
 
-export const createScopes = async (scopes: IScope[]) => {
+export const createScopes = async (scopes: Partial<IScope>[]) => {
     return await Scope.insertMany(scopes);
 };
 

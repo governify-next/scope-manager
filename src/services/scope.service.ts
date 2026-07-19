@@ -6,11 +6,10 @@ import { Types } from 'mongoose';
 import { IScopeNode } from '../types/scope.types.js';
 
 export const createScope = async (organizationId: Types.ObjectId, data: Partial<IScope>) => {
+    // TODO: Transform roles of permissions to ids.
     return await scopeRepository.createScope(organizationId, data);
 };
 
-// TODO: Add unique name between parent's children, not just in organization.
-// TODO: Add displayName to scope.
 export const createScopes = async (organizationId: Types.ObjectId, roots: IScopeNode[]) => {
     const scopes = createRecursiveTree(organizationId, roots);
     return await scopeRepository.createScopes(scopes);
@@ -50,25 +49,20 @@ export const updateScope = async (
     scopeName: string,
     data: Partial<IScope>,
 ) => {
-    const { name, description, auditConfig } = data;
-    const scope = await scopeRepository.updateScope(organizationId, scopeName, {
+    // Position in the hierarchy is not updated, parentId is only assigned when creating the scope.
+    const { name, description, fields, permissions, config } = data;
+    // TODO: Transform roles of permissions to ids.
+    return await scopeRepository.updateScope(organizationId, scopeName, {
         name,
         description,
-        auditConfig,
+        fields,
+        permissions,
+        config,
     });
-    if (!scope) {
-        throw new NotFoundError(`Scope with name '${scopeName}' not found in organization`);
-    }
-
-    return scope;
 };
 
 export const deleteScopesByParent = async (organizationId: Types.ObjectId, scopeName: string) => {
-    const scope = await scopeRepository.getScopeByName(organizationId, scopeName);
-    if (!scope) {
-        throw new NotFoundError(`Scope with name '${scopeName}' not found in organization`);
-    }
-
+    const scope = await getScopeByName(organizationId, scopeName);
     const scopeIds = await collectDescendantIds(organizationId, scope._id);
 
     return await scopeRepository.deleteScopes(organizationId, scopeIds);
@@ -80,10 +74,7 @@ export const addRoleToScopePermission = async (
     permissionName: string,
     roleNames: string[],
 ) => {
-    const scope = await getScopeByName(organizationId, scopeName);
-    if (!scope) {
-        throw new NotFoundError(`Scope with name '${scopeName}' not found in organization`);
-    }
+    await getScopeByName(organizationId, scopeName);
 
     const organization = await organizationService.getOrganizationById(
         new Types.ObjectId(organizationId.toString()),
@@ -128,18 +119,19 @@ const collectDescendantIds = async (organizationId: Types.ObjectId, scopeId: Typ
 const createRecursiveTree = (
     organizationId: Types.ObjectId,
     nodes: IScopeNode[],
-    scopes: IScope[] = [],
+    scopes: Partial<IScope>[] = [],
     parentId?: Types.ObjectId,
 ) => {
     // 1. For each node
     for (const node of nodes) {
         // 2. Create an id and assign the organization
         const nodeId = new Types.ObjectId();
-        // 3. Add the node as scope to create
-        const { children, ...scopeData } = node;
-        scopes.push({ ...scopeData, _id: nodeId, organizationId, parentId });
+        // 3. Add the node as scope to create.
+        //    fields and permissions are only handled from the individual scope endpoints.
+        const { name, description, type, config } = node;
+        scopes.push({ name, description, type, config, _id: nodeId, organizationId, parentId });
         // 4. Pass identifier to children by recursion, if it has children.
-        createRecursiveTree(organizationId, children, scopes, nodeId);
+        createRecursiveTree(organizationId, node.children, scopes, nodeId);
     }
     return scopes;
 };

@@ -8,6 +8,7 @@ export interface IScope {
     description?: string;
     type: string;
     organizationId: Types.ObjectId;
+    fields: Record<string, unknown>[];
     parentId?: Types.ObjectId;
     permissions: {
         view: Types.ObjectId[];
@@ -15,7 +16,7 @@ export interface IScope {
         delete: Types.ObjectId[];
         create: Types.ObjectId[];
     };
-    auditConfig?: Record<string, unknown>;
+    config?: Record<string, unknown>;
 }
 
 // Main Schema
@@ -27,13 +28,14 @@ const scopeSchema = new Schema<IScope>(
         type: { type: String, required: true },
         organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
         parentId: { type: Schema.Types.ObjectId, ref: 'Scope' },
+        fields: [{ type: Schema.Types.Mixed }],
         permissions: {
             view: { type: [Schema.Types.ObjectId], required: true },
             edit: { type: [Schema.Types.ObjectId], required: true },
             delete: { type: [Schema.Types.ObjectId], required: true },
             create: { type: [Schema.Types.ObjectId], required: true },
         },
-        auditConfig: { type: Schema.Types.Mixed },
+        config: { type: Schema.Types.Mixed },
     },
     {
         timestamps: true, // createdAt and updatedAt

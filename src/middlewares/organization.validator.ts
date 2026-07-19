@@ -11,6 +11,7 @@ import {
 import { getOrganizationByName } from '../services/organization.service.js';
 import { findEspecificRole } from '../services/membership.service.js';
 import { IOrganization } from '../models/organization.model.js';
+import type { FieldArrayName } from '../types/organization.types.js';
 import { bootEnv } from '../config/bootConfig.js';
 import * as authenticatorIntegration from '../integrations/authenticator.integration.js';
 
@@ -210,21 +211,23 @@ export const creatorMustKeepAdminRole = async (req: Request, res: Response, next
     }
 };
 
-export const existingAgreementField = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const organization = await getOrganizationOrFail(req.params.orgName);
-        const field = organization.agreementFields.find((f) => f.name === req.params.fieldName);
+export const existingField = (arrayName: FieldArrayName) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const organization = await getOrganizationOrFail(req.params.orgName);
+            const field = organization[arrayName].find((f) => f.name === req.params.fieldName);
 
-        if (!field)
-            return next(
-                new NotFoundError(
-                    `agreementField '${req.params.fieldName}' not found in organization '${organization.name}'`,
-                ),
-            );
-        next();
-    } catch (err) {
-        next(err);
-    }
+            if (!field)
+                return next(
+                    new NotFoundError(
+                        `${arrayName} '${req.params.fieldName}' not found in organization '${organization.name}'`,
+                    ),
+                );
+            next();
+        } catch (err) {
+            next(err);
+        }
+    };
 };
 
 export const uniqueRole = async (req: Request, res: Response, next: NextFunction) => {
@@ -264,25 +267,27 @@ export const maxRoles = async (req: Request, res: Response, next: NextFunction) 
     }
 };
 
-export const uniqueAgreementField = async (req: Request, res: Response, next: NextFunction) => {
-    const { fieldName } = req.params;
-    const newName = req.body.name;
-    // Si es update y el nombre no cambió, no hay conflicto
-    if (fieldName && newName === fieldName) return next();
+export const uniqueField = (arrayName: FieldArrayName) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        const { fieldName } = req.params;
+        const newName = req.body.name;
+        // Si es update y el nombre no cambió, no hay conflicto
+        if (fieldName && newName === fieldName) return next();
 
-    try {
-        const organization = await getOrganizationOrFail(req.params.orgName);
-        if (organization.agreementFields.some((f) => f.name === newName))
-            return next(
-                new DuplicateKeyError(
-                    `agreementField '${newName}' already exists in organization '${organization.name}'`,
-                    {},
-                ),
-            );
-        next();
-    } catch (err) {
-        next(err);
-    }
+        try {
+            const organization = await getOrganizationOrFail(req.params.orgName);
+            if (organization[arrayName].some((f) => f.name === newName))
+                return next(
+                    new DuplicateKeyError(
+                        `${arrayName} '${newName}' already exists in organization '${organization.name}'`,
+                        {},
+                    ),
+                );
+            next();
+        } catch (err) {
+            next(err);
+        }
+    };
 };
 
 export const hasOrgRole = (roleName: string) => {

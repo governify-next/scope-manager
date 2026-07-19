@@ -1,5 +1,8 @@
 import { Types } from 'mongoose';
 
+// Para distinguir entre scopeFields y agreementFields
+export type FieldArrayName = 'scopeFields' | 'agreementFields';
+
 export type OrganizationSearchFilters = {
     nameOrDisplayName?: string;
     name?: string;
@@ -17,16 +20,4 @@ export interface IRole {
     _id?: Types.ObjectId;
     name: string;
     description: string;
-}
-
-export interface IScopeType {
-    name: string;
-    description?: string;
-    childTypes: string[];
-    auditFields: IField[];
-}
-
-export interface IScopeConfig {
-    rootTypes: string[];
-    scopeTypes: IScopeType[];
 }
