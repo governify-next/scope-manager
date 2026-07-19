@@ -16,7 +16,7 @@ export interface IScope {
         delete: Types.ObjectId[];
         create: Types.ObjectId[];
     };
-    config?: Record<string, unknown>;
+    config: Record<string, unknown>;
 }
 
 // Main Schema
