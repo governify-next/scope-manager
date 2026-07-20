@@ -145,7 +145,7 @@ export const addRoleToElementPermission = async (
         throw new NotFoundError(`Element with name '${elementName}' not found in organization`);
     }
 
-    const organization = await organizationService.getOrganizationById(organizationId.toString());
+    const organization = await organizationService.getOrganizationById(organizationId);
 
     const roleIds = roleNames.map((roleName) => {
         const role = organization!.roles.find((r) => r.name === roleName);
