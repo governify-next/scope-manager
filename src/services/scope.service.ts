@@ -26,15 +26,6 @@ export const getScopesByOrganization = async (organizationId: Types.ObjectId) =>
     return scopesTree;
 };
 
-export const getScopeByName = async (organizationId: Types.ObjectId, scopeName: string) => {
-    const scope = await scopeRepository.getScopeByName(organizationId, scopeName);
-    if (!scope) {
-        throw new NotFoundError(`Scope with name '${scopeName}' not found in organization`);
-    }
-
-    return scope;
-};
-
 export const getScopeById = async (organizationId: Types.ObjectId, scopeId: Types.ObjectId) => {
     const scope = await scopeRepository.getScopeById(organizationId, scopeId);
     if (!scope) {
@@ -46,35 +37,39 @@ export const getScopeById = async (organizationId: Types.ObjectId, scopeId: Type
 
 export const updateScope = async (
     organizationId: Types.ObjectId,
-    scopeName: string,
+    scopeId: Types.ObjectId,
     data: Partial<IScope>,
 ) => {
-    // Position in the hierarchy is not updated, parentId is only assigned when creating the scope.
-    const { name, description, fields, permissions, config } = data;
+    const { name, description, type, parentId, fields, permissions, config } = data;
     // TODO: Transform roles of permissions to ids.
-    return await scopeRepository.updateScope(organizationId, scopeName, {
+    return await scopeRepository.updateScope(organizationId, scopeId, {
         name,
         description,
+        type,
+        parentId,
         fields,
         permissions,
         config,
     });
 };
 
-export const deleteScopesByParent = async (organizationId: Types.ObjectId, scopeName: string) => {
-    const scope = await getScopeByName(organizationId, scopeName);
-    const scopeIds = await collectDescendantIds(organizationId, scope._id);
+export const deleteScopesByParent = async (
+    organizationId: Types.ObjectId,
+    scopeId: Types.ObjectId,
+) => {
+    await getScopeById(organizationId, scopeId);
+    const scopeIds = await collectDescendantIds(organizationId, scopeId);
 
     return await scopeRepository.deleteScopes(organizationId, scopeIds);
 };
 
 export const addRoleToScopePermission = async (
     organizationId: Types.ObjectId,
-    scopeName: string,
+    scopeId: Types.ObjectId,
     permissionName: string,
     roleNames: string[],
 ) => {
-    await getScopeByName(organizationId, scopeName);
+    await getScopeById(organizationId, scopeId);
 
     const organization = await organizationService.getOrganizationById(
         new Types.ObjectId(organizationId.toString()),
@@ -94,7 +89,7 @@ export const addRoleToScopePermission = async (
 
     return await scopeRepository.addRoleToScopePermission(
         organizationId,
-        scopeName,
+        scopeId,
         permissionName,
         roleIds,
     );

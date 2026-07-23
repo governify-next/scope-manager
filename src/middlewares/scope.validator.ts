@@ -1,5 +1,6 @@
 import { body, validationResult } from 'express-validator';
 import { type Request, type Response, type NextFunction } from 'express';
+import { Types } from 'mongoose';
 import { ValidationError, NotFoundError } from '../utils/customErrors.js';
 import * as organizationService from '../services/organization.service.js';
 import * as scopeService from '../services/scope.service.js';
@@ -115,6 +116,13 @@ const validateScopePermissions = async (req: Request, res: Response, next: NextF
     }
 };
 
+export const validScopeId = (req: Request, res: Response, next: NextFunction) => {
+    if (!Types.ObjectId.isValid(req.params.scopeId)) {
+        return next(new ValidationError(`Scope id '${req.params.scopeId}' is not a valid id`));
+    }
+    next();
+};
+
 export const existingScope = (checkParent = false) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -125,7 +133,10 @@ export const existingScope = (checkParent = false) => {
                 if (!parentId) return next(); // is a root scope, no need validation
                 scope = await scopeService.getScopeById(organization._id, parentId);
             } else {
-                scope = await scopeService.getScopeByName(organization._id, req.params.scopeName);
+                scope = await scopeService.getScopeById(
+                    organization._id,
+                    new Types.ObjectId(req.params.scopeId),
+                );
             }
             if (!scope) {
                 return next(
@@ -175,7 +186,11 @@ export const validateScope = [
         .exists({ checkNull: true })
         .withMessage('type is required')
         .isString()
-        .withMessage('type must be a string'),
+        .withMessage('type must be a string')
+        .notEmpty()
+        .withMessage('type must not be empty')
+        .isLength({ min: 2, max: 100 })
+        .withMessage('type must be between 2 and 100 characters'),
     body('fields').exists({ checkNull: true }).isArray().withMessage('fields must be an array'),
     body('permissions')
         .exists({ checkNull: true })

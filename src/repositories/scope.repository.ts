@@ -1,37 +1,17 @@
 import Scope, { IScope } from '../models/scope.model.js';
 import { Types } from 'mongoose';
-import { DuplicateKeyError, NotFoundError } from '../utils/customErrors.js';
+import { NotFoundError } from '../utils/customErrors.js';
 
 export const createScope = async (organizationId: Types.ObjectId, data: Partial<IScope>) => {
-    try {
-        const scope = new Scope({
-            ...data,
-            organizationId,
-        });
-        return await scope.save();
-    } catch (err) {
-        const e = err as {
-            code?: number;
-            keyPattern?: { name?: number; organizationId?: number };
-            keyValue?: unknown;
-            message?: string;
-        };
-        if (e.code === 11000 && e.keyPattern?.name && e.keyPattern?.organizationId) {
-            throw new DuplicateKeyError(
-                'An scope with that name already exists in this organization',
-                e.keyValue || e.message,
-            );
-        }
-        throw err;
-    }
+    const scope = new Scope({
+        ...data,
+        organizationId,
+    });
+    return await scope.save();
 };
 
 export const getScopesByOrganizationId = async (organizationId: Types.ObjectId) => {
     return await Scope.find({ organizationId }).lean();
-};
-
-export const getScopeByName = async (organizationId: Types.ObjectId, scopeName: string) => {
-    return await Scope.findOne({ organizationId, name: scopeName });
 };
 
 export const getScopeById = async (organizationId: Types.ObjectId, scopeId: Types.ObjectId) => {
@@ -40,28 +20,12 @@ export const getScopeById = async (organizationId: Types.ObjectId, scopeId: Type
 
 export const updateScope = async (
     organizationId: Types.ObjectId,
-    scopeName: string,
+    scopeId: Types.ObjectId,
     data: Partial<IScope>,
 ) => {
-    try {
-        return await Scope.findOneAndUpdate({ organizationId, name: scopeName }, data, {
-            new: true,
-        });
-    } catch (err) {
-        const e = err as {
-            code?: number;
-            keyPattern?: { name?: number; organizationId?: number };
-            keyValue?: unknown;
-            message?: string;
-        };
-        if (e.code === 11000 && e.keyPattern?.name && e.keyPattern?.organizationId) {
-            throw new DuplicateKeyError(
-                'An scope with that name already exists in this organization',
-                e.keyValue || e.message,
-            );
-        }
-        throw err;
-    }
+    return await Scope.findOneAndUpdate({ organizationId, _id: scopeId }, data, {
+        new: true,
+    });
 };
 
 export const deleteScopes = async (organizationId: Types.ObjectId, scopeIds: Types.ObjectId[]) => {
@@ -70,13 +34,13 @@ export const deleteScopes = async (organizationId: Types.ObjectId, scopeIds: Typ
 
 export const addRoleToScopePermission = async (
     organizationId: Types.ObjectId,
-    scopeName: string,
+    scopeId: Types.ObjectId,
     permissionName: string,
     roleIds: Types.ObjectId[],
 ) => {
-    const scope = await Scope.findOne({ organizationId, name: scopeName });
+    const scope = await Scope.findOne({ organizationId, _id: scopeId });
     if (!scope) {
-        throw new NotFoundError(`Scope with name '${scopeName}' not found in organization`);
+        throw new NotFoundError(`Scope with id '${scopeId}' not found in organization`);
     }
 
     const permission = scope.permissions[permissionName as keyof typeof scope.permissions]; // this was checked before

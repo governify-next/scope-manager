@@ -117,7 +117,7 @@ export const deleteOrganization = async (orgName: string) => {
 
     // Borramos los scopes asociados
     const scopes = await scopeService.getScopesByOrganization(orgId);
-    await Promise.all(scopes.map((s) => scopeService.deleteScopesByParent(orgId, s.name)));
+    await Promise.all(scopes.map((scope) => scopeService.deleteScopesByParent(orgId, scope._id)));
     // Borramos la organización
     return await organizationRepository.deleteOrganization(orgName);
 };

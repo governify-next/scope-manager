@@ -39,11 +39,11 @@ const scopeSchema = new Schema<IScope>(
     },
     {
         timestamps: true, // createdAt and updatedAt
+        minimize: false,
     },
 );
 
-// scope names must be unique within an organization
-scopeSchema.index({ organizationId: 1, name: 1 }, { unique: true });
+scopeSchema.index({ organizationId: 1 });
 
 const Scope = mongoose.model<IScope>('Scope', scopeSchema);
 export default Scope;
