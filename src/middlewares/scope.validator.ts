@@ -191,6 +191,11 @@ export const validateScope = [
         .withMessage('type must not be empty')
         .isLength({ min: 2, max: 100 })
         .withMessage('type must be between 2 and 100 characters'),
+    body('parentId')
+        .exists()
+        .withMessage('parentId is required (use null for root scopes)')
+        .custom((value) => value === null || Types.ObjectId.isValid(value))
+        .withMessage('parentId must be null or a valid id'),
     body('fields').exists({ checkNull: true }).isArray().withMessage('fields must be an array'),
     body('permissions')
         .exists({ checkNull: true })

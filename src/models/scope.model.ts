@@ -9,7 +9,7 @@ export interface IScope {
     type: string;
     organizationId: Types.ObjectId;
     fields: Record<string, unknown>[];
-    parentId?: Types.ObjectId;
+    parentId: Types.ObjectId | null;
     permissions: {
         view: Types.ObjectId[];
         edit: Types.ObjectId[];

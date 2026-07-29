@@ -115,7 +115,7 @@ const createRecursiveTree = (
     organizationId: Types.ObjectId,
     nodes: IScopeNode[],
     scopes: Partial<IScope>[] = [],
-    parentId?: Types.ObjectId,
+    parentId: Types.ObjectId | null = null,
 ) => {
     // 1. For each node
     for (const node of nodes) {
@@ -141,8 +141,8 @@ const buildScopesTree = (scopes: IScope[]) => {
     // 2. For each scope, if it has a parentId, add it to the children of the parent. If not, add it to the root nodes array.
     const scopesRoot = [];
     for (const node of scopesMap.values()) {
-        if (node.parentId !== undefined) {
-            const parent = scopesMap.get(node.parentId!.toString());
+        if (node.parentId !== null) {
+            const parent = scopesMap.get(node.parentId.toString());
             parent!.children.push(node);
         } else {
             scopesRoot.push(node);
