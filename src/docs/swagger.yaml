@@ -9,8 +9,11 @@ info:
         Each organization is the main container in the system: it groups scopes,
         defines the vocabulary they must follow and establishes the available roles.
 
-        Scopes form a hierarchy within an organization: each scope may reference a
-        parent through `parentId`, and root scopes leave it empty.
+        Scopes form a hierarchy within an organization: each scope references its
+        parent through `parentId`, which is `null` on root scopes.
+
+        Scope names are not unique, since siblings and scopes in different branches of
+        the tree may share the same name, so scopes are always addressed by their id.
 servers:
     - url: /
 
@@ -940,6 +943,7 @@ paths:
                                       description: Curso PSG2 año 2024/2025
                                       type: Organizations
                                       organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      parentId: null
                                       fields: []
                                       permissions:
                                           view: []
@@ -995,10 +999,9 @@ paths:
             description: |
                 Creates a new scope within the specified organization.
                 The organization must exist.
-                The body must include name, type, fields, permissions and config.
+                The body must include name, type, parentId, fields, permissions and config.
                 `description` is optional and `parentId` places the scope under an existing
-                scope of the same organization; leave it out to create a root scope.
-                The scope name must be unique within the organization.
+                scope of the same organization; send `null` to create a root scope.
                 Fields must reference existing scope fields defined in the organization.
                 Permission roles must reference existing roles in the organization.
             requestBody:
@@ -1038,8 +1041,6 @@ paths:
                     $ref: '#/components/responses/ValidationError'
                 '404':
                     $ref: '#/components/responses/OrganizationNotFound'
-                '409':
-                    $ref: '#/components/responses/Conflict'
                 '500':
                     $ref: '#/components/responses/InternalError'
 
@@ -1062,7 +1063,6 @@ paths:
                 `parentId` must not be sent.
                 `fields` and `permissions` are not accepted here: every scope is created with
                 them empty and they are managed from the individual scope endpoints.
-                Scope names must be unique within the organization.
             requestBody:
                 $ref: '#/components/requestBodies/ScopesTreeBody'
             responses:
@@ -1083,6 +1083,7 @@ paths:
                                       description: Curso PSG2 año 2024/2025
                                       type: Organizations
                                       organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      parentId: null
                                       fields: []
                                       permissions:
                                           view: []
@@ -1139,24 +1140,22 @@ paths:
                     $ref: '#/components/responses/ValidationError'
                 '404':
                     $ref: '#/components/responses/OrganizationNotFound'
-                '409':
-                    $ref: '#/components/responses/Conflict'
                 '500':
                     $ref: '#/components/responses/InternalError'
 
-    /api/v1/organizations/{orgName}/scopes/{scopeName}:
+    /api/v1/organizations/{orgName}/scopes/{scopeId}:
         parameters:
             - $ref: '#/components/parameters/orgName'
-            - $ref: '#/components/parameters/scopeName'
+            - $ref: '#/components/parameters/scopeId'
         get:
             tags:
                 - Scopes
-            summary: Get a scope by name
-            operationId: getScopeByName
+            summary: Get a scope by id
+            operationId: getScopeById
             security:
                 - BearerAuth: []
             description: |
-                Returns a specific scope identified by its name within the organization.
+                Returns a specific scope identified by its id within the organization.
                 The organization and scope must exist.
             responses:
                 '200':
@@ -1179,14 +1178,14 @@ paths:
             description: |
                 Updates an existing scope. All required fields must be sent in the body.
                 The organization and scope must exist.
-                The body must include name, type, fields, permissions and config,
+                The body must include name, type, parentId, fields, permissions and config,
                 and `description` is optional.
-                The position of the scope in the hierarchy cannot be changed through this
-                endpoint: `parentId` is only assigned on creation and is ignored here.
+                `parentId` sets the position of the scope in the hierarchy: send `null`
+                to turn it into a root scope.
                 Fields must reference existing scope fields defined in the organization.
                 Permission roles must reference existing roles in the organization.
             requestBody:
-                $ref: '#/components/requestBodies/ScopeBody'
+                $ref: '#/components/requestBodies/ScopeUpdateBody'
             responses:
                 '200':
                     description: Scope updated successfully
@@ -1200,12 +1199,12 @@ paths:
                                 httpStatus: 200
                                 appCode: SUCCESS
                                 data:
-                                    _id: 665b1c2d3e4f5a6b7c8d9e0f
-                                    name: gii-is-g1
-                                    description: Repositorio del grupo 1 actualizado
-                                    type: Repositories
+                                    _id: 665a2b3c4d5e6f7a8b9c0d1e
+                                    name: psg2-2526
+                                    description: Curso PSG2 año 2025/2026 (actualizado)
+                                    type: Organizations
                                     organizationId: 665a1b2c3d4e5f6a7b8c9d0e
-                                    parentId: 665a2b3c4d5e6f7a8b9c0d1e
+                                    parentId: null
                                     fields: []
                                     permissions:
                                         view: []
@@ -1213,7 +1212,8 @@ paths:
                                         delete: []
                                         create: []
                                     config:
-                                        repository: psg2-2425-g1
+                                        owner: gii-is-psg2
+                                        token: your-token-here-25/26
                                     createdAt: '2026-01-15T10:00:00.000Z'
                                     updatedAt: '2026-01-15T12:00:00.000Z'
                                     __v: 0
@@ -1222,8 +1222,6 @@ paths:
                     $ref: '#/components/responses/ValidationError'
                 '404':
                     $ref: '#/components/responses/ScopeNotFound'
-                '409':
-                    $ref: '#/components/responses/Conflict'
                 '500':
                     $ref: '#/components/responses/InternalError'
         delete:
@@ -1259,10 +1257,10 @@ paths:
     # ──────────────────────────────────────────────
     # Scope Permissions
     # ──────────────────────────────────────────────
-    /api/v1/organizations/{orgName}/scopes/{scopeName}/permissions/{permissionName}:
+    /api/v1/organizations/{orgName}/scopes/{scopeId}/permissions/{permissionName}:
         parameters:
             - $ref: '#/components/parameters/orgName'
-            - $ref: '#/components/parameters/scopeName'
+            - $ref: '#/components/parameters/scopeId'
             - $ref: '#/components/parameters/permissionName'
         post:
             tags:
@@ -1368,14 +1366,14 @@ components:
             schema:
                 type: string
             example: janedoe
-        scopeName:
-            name: scopeName
+        scopeId:
+            name: scopeId
             in: path
             required: true
-            description: Unique name of the scope within the organization
+            description: Id of the scope within the organization
             schema:
                 type: string
-            example: gii-is-g1
+            example: 665b1c2d3e4f5a6b7c8d9e0f
         permissionName:
             name: permissionName
             in: path
@@ -1532,13 +1530,14 @@ components:
 
         ScopeBody:
             description: |
-                Data to create or update a scope.
-                `name`, `type`, `fields`, `permissions` and `config` are required.
-                `name` must be a string between 2 and 100 characters.
+                Data to create a scope.
+                `name`, `type`, `parentId`, `fields`, `permissions` and `config` are required.
+                `name` must be a string between 2 and 100 characters and does not need to be
+                unique within the organization.
                 `description` is optional and must be a string between 3 and 500 characters.
                 `fields` must be an array, `permissions` and `config` must be objects.
-                `parentId` is only used on creation and must reference an existing scope
-                of the same organization; leave it out to create a root scope.
+                `parentId` must be `null` for a root scope or the id of an existing scope
+                of the same organization.
                 Each field name must exist in the organization's scopeFields.
                 Each permission value must be an array of role names that exist in the organization.
             required: true
@@ -1553,6 +1552,7 @@ components:
                                 name: psg2-2526
                                 description: Curso PSG2 año 2025/2026
                                 type: Organizations
+                                parentId: null
                                 fields: []
                                 permissions:
                                     view: []
@@ -1577,6 +1577,30 @@ components:
                                     create: []
                                 config:
                                     repository: psg2-2425-g2
+
+        ScopeUpdateBody:
+            description: |
+                New data for the scope, with the same rules as the creation body.
+                Every required field must be sent, even if its value does not change.
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ScopeInput'
+                    example:
+                        name: psg2-2526
+                        description: Curso PSG2 año 2025/2026 (actualizado)
+                        type: Organizations
+                        parentId: null
+                        fields: []
+                        permissions:
+                            view: []
+                            edit: []
+                            delete: []
+                            create: []
+                        config:
+                            owner: gii-is-psg2
+                            token: your-token-here-25/26
 
         ScopesTreeBody:
             description: |
@@ -1829,12 +1853,12 @@ components:
                         $ref: '#/components/schemas/ErrorResponse'
                     example:
                         success: false
-                        message: "Scope with name 'gii-is-g1' not found in organization"
+                        message: "Scope with id '665b1c2d3e4f5a6b7c8d9e0f' not found in organization"
                         httpStatus: 404
                         appCode: NOT_FOUND
                         data: null
                         error:
-                            message: "Scope with name 'gii-is-g1' not found in organization"
+                            message: "Scope with id '665b1c2d3e4f5a6b7c8d9e0f' not found in organization"
                             details: null
         Unauthorized:
             description: Missing or invalid authentication token
@@ -2286,20 +2310,21 @@ components:
             description: |
                 A scope within an organization (e.g. a class or a team).
                 Scopes are hierarchical: `parentId` references the scope above and is
-                absent on root scopes.
+                `null` on root scopes.
             required:
                 - _id
                 - name
                 - type
                 - organizationId
+                - parentId
             properties:
                 _id:
                     type: string
-                    description: MongoDB internal identifier (ObjectId)
+                    description: Scope id, used to address the scope in every endpoint
                     example: 665b1c2d3e4f5a6b7c8d9e0f
                 name:
                     type: string
-                    description: Unique scope name within the organization
+                    description: Scope name. Not unique within the organization.
                     example: gii-is-g1
                 description:
                     type: string
@@ -2310,11 +2335,12 @@ components:
                     example: Repositories
                 organizationId:
                     type: string
-                    description: Organization ObjectId reference
+                    description: Id of the organization the scope belongs to
                     example: 665a1b2c3d4e5f6a7b8c9d0e
                 parentId:
                     type: string
-                    description: Parent scope ObjectId reference. Absent on root scopes.
+                    nullable: true
+                    description: Id of the parent scope. `null` on root scopes.
                     example: 665a2b3c4d5e6f7a8b9c0d1e
                 fields:
                     type: array
@@ -2351,6 +2377,7 @@ components:
             required:
                 - name
                 - type
+                - parentId
                 - fields
                 - permissions
                 - config
@@ -2359,6 +2386,7 @@ components:
                     type: string
                     minLength: 2
                     maxLength: 100
+                    description: Scope name. Not unique within the organization.
                     example: gii-is-g1
                 description:
                     type: string
@@ -2370,9 +2398,10 @@ components:
                     example: Repositories
                 parentId:
                     type: string
+                    nullable: true
                     description: |
-                        Parent scope ObjectId. Only used on creation and must reference an
-                        existing scope of the same organization. Leave it out to create a root scope.
+                        Id of the parent scope, which must exist in the same organization.
+                        `null` for a root scope.
                     example: 665a2b3c4d5e6f7a8b9c0d1e
                 fields:
                     type: array
