@@ -9,7 +9,7 @@ export interface IMembership extends Document {
 const membershipSchema = new Schema<IMembership>(
     {
         organizationId: { type: Schema.Types.ObjectId, required: true, ref: 'Organization' },
-        userId: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+        userId: { type: Schema.Types.ObjectId, required: true },
         rolesId: {
             type: [Schema.Types.ObjectId],
             default: [],
@@ -23,6 +23,9 @@ membershipSchema.index({ organizationId: 1, userId: 1 }, { unique: true });
 
 // Índice para saber que usuarios tienen x roles en una org
 membershipSchema.index({ organizationId: 1, rolesId: 1 });
+
+// Índice para encontrar las organizaciones a las que pertenece un usuario
+membershipSchema.index({ userId: 1 });
 
 const Membership = mongoose.model<IMembership>('Membership', membershipSchema);
 export default Membership;

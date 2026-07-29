@@ -3,35 +3,34 @@ info:
     title: Scope manager API
     version: 1.0.0
     description: |
-        REST API for managing organizations, their roles, element fields
+        REST API for managing organizations, their roles, scope fields
         and agreement fields within Scope manager API.
 
-        Each organization is the main container in the system: it groups elements,
+        Each organization is the main container in the system: it groups scopes,
         defines the vocabulary they must follow and establishes the available roles.
+
+        Scopes form a hierarchy within an organization: each scope may reference a
+        parent through `parentId`, and root scopes leave it empty.
 servers:
     - url: /
 
 tags:
     - name: Health
       description: Server health check
-    - name: Users
-      description: User management
     - name: Organizations
       description: Organization management
-    - name: Roles
+    - name: Organizations Roles
       description: Role management within an organization
-    - name: ElementFields
-      description: Fields that define the structure of an organization's elements
-    - name: AgreementFields
+    - name: Organizations ScopeFields
+      description: Fields that define the structure of an organization's scopes
+    - name: Organizations AgreementFields
       description: Fields that define the structure of an organization's agreements
-    - name: Members
+    - name: Organizations Members
       description: Member management within an organization
-    - name: Elements
-      description: Element management within an organization
-    - name: ElementParts
-      description: Part management within an element
-    - name: ElementPermissions
-      description: Permission management within an element
+    - name: Scopes
+      description: Scope management within an organization
+    - name: ScopePermissions
+      description: Permission management within a scope
 
 paths:
     # ──────────────────────────────────────────────
@@ -42,6 +41,7 @@ paths:
             tags:
                 - Health
             summary: Health check
+            description: Returns the server health status. This endpoint does not use the standard response wrapper.
             responses:
                 '200':
                     description: OK
@@ -52,246 +52,6 @@ paths:
                                 properties:
                                     status:
                                         type: string
-
-    # ──────────────────────────────────────────────
-    # Users
-    # ──────────────────────────────────────────────
-    /api/v1/users:
-        get:
-            tags:
-                - Users
-            summary: List all users
-            operationId: getUsers
-            security:
-                - BearerAuth: []
-            description: |
-                Returns an array with all users in the system.
-                Requires admin role to access.
-            responses:
-                '200':
-                    description: A list of users
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: array
-                                              items:
-                                                  $ref: '#/components/schemas/User'
-                '401':
-                    $ref: '#/components/responses/Unauthorized'
-                '403':
-                    $ref: '#/components/responses/Forbidden'
-                '500':
-                    $ref: '#/components/responses/InternalError'
-        post:
-            tags:
-                - Users
-            summary: Create a new user
-            operationId: createUser
-            description: |
-                Creates a new user with the provided credentials.
-                Requires admin role to create users.
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/UserInput'
-                        examples:
-                            john:
-                                summary: Usuario admin
-                                value:
-                                    username: johndoe
-                                    email: john@example.com
-                                    password: securePassword123
-                                    name: John
-                                    surname: Doe
-                                    systemRole: ADMIN
-                            jane:
-                                summary: Usuario estándar
-                                value:
-                                    username: janedoe
-                                    email: jane@example.com
-                                    password: securePassword456
-                                    name: Jane
-                                    surname: Doe
-                                    systemRole: USER
-            responses:
-                '201':
-                    description: User created successfully
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/User'
-                '400':
-                    $ref: '#/components/responses/ValidationError'
-                '401':
-                    $ref: '#/components/responses/Unauthorized'
-                '403':
-                    $ref: '#/components/responses/Forbidden'
-                '409':
-                    $ref: '#/components/responses/Conflict'
-                '500':
-                    $ref: '#/components/responses/InternalError'
-
-    /api/v1/users/{username}:
-        parameters:
-            - in: path
-              name: username
-              required: true
-              schema:
-                  type: string
-              description: Username of the user
-              example: johndoe
-        get:
-            tags:
-                - Users
-            summary: Get user by username
-            operationId: getUserByUsername
-            security:
-                - BearerAuth: []
-            description: |
-                Returns a specific user by their username.
-                Requires admin role to access.
-            responses:
-                '200':
-                    description: User found
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/User'
-                '401':
-                    $ref: '#/components/responses/Unauthorized'
-                '403':
-                    $ref: '#/components/responses/Forbidden'
-                '404':
-                    $ref: '#/components/responses/NotFound'
-                '500':
-                    $ref: '#/components/responses/InternalError'
-        put:
-            tags:
-                - Users
-            summary: Update user by username
-            operationId: updateUser
-            security:
-                - BearerAuth: []
-            description: |
-                Updates an existing user's information.
-                Requires admin role to update users.
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/UserInput'
-            responses:
-                '200':
-                    description: User updated successfully
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/User'
-                '400':
-                    $ref: '#/components/responses/ValidationError'
-                '401':
-                    $ref: '#/components/responses/Unauthorized'
-                '403':
-                    $ref: '#/components/responses/Forbidden'
-                '404':
-                    $ref: '#/components/responses/NotFound'
-                '500':
-                    $ref: '#/components/responses/InternalError'
-        delete:
-            tags:
-                - Users
-            summary: Delete user by username
-            operationId: deleteUser
-            security:
-                - BearerAuth: []
-            description: |
-                Deletes a user from the system.
-                Requires admin role to delete users.
-            responses:
-                '200':
-                    description: User deleted successfully
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: object
-                                              nullable: true
-                                              example: null
-                '401':
-                    $ref: '#/components/responses/Unauthorized'
-                '403':
-                    $ref: '#/components/responses/Forbidden'
-                '404':
-                    $ref: '#/components/responses/NotFound'
-                '500':
-                    $ref: '#/components/responses/InternalError'
-
-    /api/v1/users/login:
-        post:
-            tags:
-                - Users
-            summary: User login
-            operationId: login
-            description: |
-                Authenticates a user using their login credentials (username or email) and password.
-                Returns a JWT token upon successful authentication.
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/LoginInput'
-            responses:
-                '200':
-                    description: Login successful. Returns a JWT token.
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: string
-                                              description: JWT authentication token
-                                              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-                '400':
-                    $ref: '#/components/responses/ValidationError'
-                '401':
-                    description: Invalid credentials
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorResponse'
-                '500':
-                    $ref: '#/components/responses/InternalError'
 
     # ──────────────────────────────────────────────
     # Organizations
@@ -305,22 +65,19 @@ paths:
             security:
                 - BearerAuth: []
             description: |
-                Returns an array with all organizations registered in the system.
-                Each organization includes its roles, element fields and agreement fields.
+                Returns a paginated array with organizations registered in the system.
+                Requires an authenticated user with system ADMIN role.
+                Each organization includes its roles, scope fields, agreement fields and members count.
+            parameters:
+                - $ref: '#/components/parameters/paginationPage'
+                - $ref: '#/components/parameters/paginationLimit'
             responses:
                 '200':
                     description: List of organizations retrieved successfully
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: array
-                                              items:
-                                                  $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationsResponse'
                             example:
                                 success: true
                                 message: OK
@@ -331,16 +88,27 @@ paths:
                                       name: universidad-sevilla
                                       displayName: Universidad de Sevilla
                                       description: Organization for Universidad de Sevilla
-                                      elementFields: []
+                                      createdBy: 665d4e5f6a7b8c9d0e1f2a3b
+                                      scopeFields: []
                                       agreementFields: []
                                       roles:
                                           - _id: 665b2c3d4e5f6a7b8c9d0e1f
                                             name: admin
                                             description: Organization Administrator
+                                      members: 1
                                       createdAt: '2025-06-01T10:00:00.000Z'
                                       updatedAt: '2025-06-01T10:00:00.000Z'
                                       __v: 0
+                                pagination:
+                                    page: 1
+                                    limit: 10
+                                    totalItems: 1
+                                    totalPages: 1
+                                    hasNextPage: false
+                                    hasPreviousPage: false
                                 error: null
+                '400':
+                    $ref: '#/components/responses/ValidationError'
                 '401':
                     $ref: '#/components/responses/Unauthorized'
                 '500':
@@ -353,10 +121,11 @@ paths:
             security:
                 - BearerAuth: []
             description: |
-                Creates a new organization with a unique name and a description.
-                Requires system ADMIN role. The organization is created with a default
-                'admin' role and the creator is automatically assigned as admin.
-                The elementFields and agreementFields arrays are initialized empty.
+                Creates a new organization with a unique name, optional displayName and description.
+                Requires an authenticated user with system ADMIN role.
+                The organization is created with a default 'admin' role, stores the creator id
+                and automatically assigns the creator as organization admin.
+                The scopeFields and agreementFields arrays are initialized empty.
             requestBody:
                 $ref: '#/components/requestBodies/OrganizationBody'
             responses:
@@ -365,12 +134,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                             example:
                                 success: true
                                 message: Organization created
@@ -381,7 +145,8 @@ paths:
                                     name: universidad-sevilla
                                     displayName: Universidad de Sevilla
                                     description: Organization for Universidad de Sevilla
-                                    elementFields: []
+                                    createdBy: 665d4e5f6a7b8c9d0e1f2a3b
+                                    scopeFields: []
                                     agreementFields: []
                                     roles:
                                         - _id: 665b2c3d4e5f6a7b8c9d0e1f
@@ -402,6 +167,69 @@ paths:
                 '500':
                     $ref: '#/components/responses/InternalError'
 
+    /api/v1/organizations/search:
+        post:
+            tags:
+                - Organizations
+            summary: Search organizations
+            operationId: searchOrganizations
+            security:
+                - BearerAuth: []
+            description: |
+                Searches organizations using optional text filters and pagination.
+                Requires an authenticated user.
+                Filters can target name, displayName or both.
+                Users with system ADMIN role search across all organizations.
+                Non-admin users only search organizations where they are members.
+                Each organization includes its members count.
+            parameters:
+                - $ref: '#/components/parameters/paginationPage'
+                - $ref: '#/components/parameters/paginationLimit'
+            requestBody:
+                $ref: '#/components/requestBodies/OrganizationSearchBody'
+            responses:
+                '200':
+                    description: Organizations matching the search filters
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OrganizationsResponse'
+                            example:
+                                success: true
+                                message: OK
+                                httpStatus: 200
+                                appCode: SUCCESS
+                                data:
+                                    - _id: 665a1b2c3d4e5f6a7b8c9d0e
+                                      name: universidad-sevilla
+                                      displayName: Universidad de Sevilla
+                                      description: Organization for Universidad de Sevilla
+                                      createdBy: 665d4e5f6a7b8c9d0e1f2a3b
+                                      scopeFields: []
+                                      agreementFields: []
+                                      roles:
+                                          - _id: 665b2c3d4e5f6a7b8c9d0e1f
+                                            name: admin
+                                            description: Organization Administrator
+                                      members: 1
+                                      createdAt: '2025-06-01T10:00:00.000Z'
+                                      updatedAt: '2025-06-01T10:00:00.000Z'
+                                      __v: 0
+                                pagination:
+                                    page: 1
+                                    limit: 10
+                                    totalItems: 1
+                                    totalPages: 1
+                                    hasNextPage: false
+                                    hasPreviousPage: false
+                                error: null
+                '400':
+                    $ref: '#/components/responses/ValidationError'
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
+                '500':
+                    $ref: '#/components/responses/InternalError'
+
     /api/v1/organizations/{orgName}:
         parameters:
             - $ref: '#/components/parameters/orgName'
@@ -414,19 +242,38 @@ paths:
                 - BearerAuth: []
             description: |
                 Returns the full organization identified by its unique name,
-                including its roles, element fields and agreement fields.
+                including its roles, scope fields, agreement fields and members count.
+                Requires an authenticated user that is either a member of the organization
+                or has system ADMIN role.
             responses:
                 '200':
                     description: Organization found
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
+                            example:
+                                success: true
+                                message: OK
+                                httpStatus: 200
+                                appCode: SUCCESS
+                                data:
+                                    _id: 665a1b2c3d4e5f6a7b8c9d0e
+                                    name: universidad-sevilla
+                                    displayName: Universidad de Sevilla
+                                    description: Organization for Universidad de Sevilla
+                                    createdBy: 665d4e5f6a7b8c9d0e1f2a3b
+                                    scopeFields: []
+                                    agreementFields: []
+                                    roles:
+                                        - _id: 665b2c3d4e5f6a7b8c9d0e1f
+                                          name: admin
+                                          description: Organization Administrator
+                                    members: 1
+                                    createdAt: '2025-06-01T10:00:00.000Z'
+                                    updatedAt: '2025-06-01T10:00:00.000Z'
+                                    __v: 0
+                                error: null
                 '401':
                     $ref: '#/components/responses/Unauthorized'
                 '404':
@@ -441,9 +288,10 @@ paths:
             security:
                 - BearerAuth: []
             description: |
-                Updates the name and/or description of an existing organization.
-                Requires organization admin role.
+                Updates the name, displayName and description of an existing organization.
+                Requires organization admin role or system ADMIN role.
                 If the name is changed, the new name must be unique in the system.
+                The request body is validated with the same required fields as creation.
             requestBody:
                 $ref: '#/components/requestBodies/OrganizationBody'
             responses:
@@ -452,12 +300,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                 '400':
                     $ref: '#/components/responses/ValidationError'
                 '401':
@@ -465,7 +308,7 @@ paths:
                 '403':
                     $ref: '#/components/responses/Forbidden'
                 '404':
-                    $ref: '#/components/responses/OrganizationNotFound'
+                    $ref: '#/components/responses/NotFound'
                 '409':
                     $ref: '#/components/responses/OrganizationConflict'
                 '500':
@@ -479,21 +322,15 @@ paths:
                 - BearerAuth: []
             description: |
                 Permanently deletes the organization and all its associated data.
-                Requires organization admin role.
+                Requires organization admin role or system ADMIN role.
+                Memberships and scopes belonging to the organization are removed before the organization.
             responses:
                 '200':
                     description: Organization deleted successfully
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: object
-                                              nullable: true
-                                              example: null
+                                $ref: '#/components/schemas/NullResponse'
                             example:
                                 success: true
                                 message: Organization deleted
@@ -506,7 +343,7 @@ paths:
                 '403':
                     $ref: '#/components/responses/Forbidden'
                 '404':
-                    $ref: '#/components/responses/OrganizationNotFound'
+                    $ref: '#/components/responses/NotFound'
                 '500':
                     $ref: '#/components/responses/InternalError'
 
@@ -518,14 +355,15 @@ paths:
             - $ref: '#/components/parameters/orgName'
         post:
             tags:
-                - Roles
+                - Organizations Roles
             summary: Add a role to the organization
             operationId: addRole
             security:
                 - BearerAuth: []
             description: |
                 Adds a new role to the specified organization.
-                Requires organization admin role.
+                Requires organization admin role or system ADMIN role.
+                The role body must include name and description.
                 The role name must be unique within the organization.
                 There is a maximum role limit per organization (default 100).
             requestBody:
@@ -536,12 +374,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                 '400':
                     $ref: '#/components/responses/ValidationError'
                 '401':
@@ -549,7 +382,7 @@ paths:
                 '403':
                     $ref: '#/components/responses/Forbidden'
                 '404':
-                    $ref: '#/components/responses/OrganizationNotFound'
+                    $ref: '#/components/responses/NotFound'
                 '409':
                     $ref: '#/components/responses/RoleConflict'
                 '500':
@@ -561,16 +394,17 @@ paths:
             - $ref: '#/components/parameters/roleName'
         put:
             tags:
-                - Roles
+                - Organizations Roles
             summary: Update a role
             operationId: updateRole
             security:
                 - BearerAuth: []
             description: |
                 Updates the name and/or description of an existing role.
-                Requires organization admin role.
+                Requires organization admin role or system ADMIN role.
                 The built-in 'admin' role cannot be modified.
                 If the name is changed, the new name must be unique within the organization.
+                The role body must include name and description.
             requestBody:
                 $ref: '#/components/requestBodies/RoleBody'
             responses:
@@ -579,12 +413,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                 '400':
                     $ref: '#/components/responses/ValidationError'
                 '401':
@@ -599,28 +428,24 @@ paths:
                     $ref: '#/components/responses/InternalError'
         delete:
             tags:
-                - Roles
+                - Organizations Roles
             summary: Delete a role
             operationId: deleteRole
             security:
                 - BearerAuth: []
             description: |
-                Removes a role from the organization. Requires organization admin role.
+                Removes a role from the organization.
+                Requires organization admin role or system ADMIN role.
                 The built-in 'admin' role cannot be deleted.
-                This operation also cascade-deletes all references to this role
-                in the associated user memberships.
+                This operation also removes the role from associated memberships and deletes
+                memberships that are left without roles.
             responses:
                 '200':
                     description: Role deleted successfully. Returns the updated organization.
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                 '401':
                     $ref: '#/components/responses/Unauthorized'
                 '403':
@@ -631,37 +456,35 @@ paths:
                     $ref: '#/components/responses/InternalError'
 
     # ──────────────────────────────────────────────
-    # Element Fields
+    # Scope Fields
     # ──────────────────────────────────────────────
-    /api/v1/organizations/{orgName}/elementFields:
+    /api/v1/organizations/{orgName}/scopeFields:
         parameters:
             - $ref: '#/components/parameters/orgName'
         post:
             tags:
-                - ElementFields
-            summary: Add an element field
-            operationId: addElementField
+                - Organizations ScopeFields
+            summary: Add a scope field
+            operationId: addScopeField
             security:
                 - BearerAuth: []
             description: |
-                Adds a new field to the organization's element definition.
-                Requires organization admin role.
-                This field becomes part of the structure that elements belonging
+                Adds a new field to the organization's scope definition.
+                Requires organization admin role or system ADMIN role.
+                The field body must include name, description and type.
+                Type must be one of `string`, `enum` or `number`.
+                If type is `enum`, value must be an array; otherwise value must not be sent.
+                This field becomes part of the structure that scopes belonging
                 to this organization must follow.
             requestBody:
                 $ref: '#/components/requestBodies/FieldBody'
             responses:
                 '201':
-                    description: Element field added. Returns the updated organization.
+                    description: Scope field added. Returns the updated organization.
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                 '400':
                     $ref: '#/components/responses/ValidationError'
                 '401':
@@ -671,39 +494,39 @@ paths:
                 '404':
                     $ref: '#/components/responses/OrganizationNotFound'
                 '409':
-                    $ref: '#/components/responses/ElementFieldConflict'
+                    $ref: '#/components/responses/ScopeFieldConflict'
                 '500':
                     $ref: '#/components/responses/InternalError'
 
-    /api/v1/organizations/{orgName}/elementFields/{fieldName}:
+    /api/v1/organizations/{orgName}/scopeFields/{fieldName}:
         parameters:
             - $ref: '#/components/parameters/orgName'
-            - $ref: '#/components/parameters/elementFieldName'
+            - $ref: '#/components/parameters/scopeFieldName'
         put:
             tags:
-                - ElementFields
-            summary: Update an element field
-            operationId: updateElementField
+                - Organizations ScopeFields
+            summary: Update a scope field
+            operationId: updateScopeField
             security:
                 - BearerAuth: []
             description: |
-                Updates an existing element field. Requires organization admin role.
+                Updates an existing scope field.
+                Requires organization admin role or system ADMIN role.
+                The existing field must belong to the organization's scopeFields.
+                The field body must include name, description and type.
+                Type must be one of `string`, `enum` or `number`.
+                If type is `enum`, value must be an array; otherwise value must not be sent.
                 If the name is changed, the new name must be unique within the
-                organization's elementFields.
+                organization's scopeFields.
             requestBody:
                 $ref: '#/components/requestBodies/FieldBody'
             responses:
                 '200':
-                    description: Element field updated. Returns the updated organization.
+                    description: Scope field updated. Returns the updated organization.
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                 '400':
                     $ref: '#/components/responses/ValidationError'
                 '401':
@@ -711,39 +534,35 @@ paths:
                 '403':
                     $ref: '#/components/responses/Forbidden'
                 '404':
-                    $ref: '#/components/responses/ElementFieldNotFound'
+                    $ref: '#/components/responses/ScopeFieldNotFound'
                 '409':
-                    $ref: '#/components/responses/ElementFieldConflict'
+                    $ref: '#/components/responses/ScopeFieldConflict'
                 '500':
                     $ref: '#/components/responses/InternalError'
         delete:
             tags:
-                - ElementFields
-            summary: Delete an element field
-            operationId: deleteElementField
+                - Organizations ScopeFields
+            summary: Delete a scope field
+            operationId: deleteScopeField
             security:
                 - BearerAuth: []
             description: |
-                Removes a field from the organization's element definition.
-                Requires organization admin role.
+                Removes a field from the organization's scope definition.
+                Requires organization admin role or system ADMIN role.
+                The field must exist in the organization's scopeFields.
             responses:
                 '200':
-                    description: Element field deleted. Returns the updated organization.
+                    description: Scope field deleted. Returns the updated organization.
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                 '401':
                     $ref: '#/components/responses/Unauthorized'
                 '403':
                     $ref: '#/components/responses/Forbidden'
                 '404':
-                    $ref: '#/components/responses/ElementFieldNotFound'
+                    $ref: '#/components/responses/ScopeFieldNotFound'
                 '500':
                     $ref: '#/components/responses/InternalError'
 
@@ -755,16 +574,19 @@ paths:
             - $ref: '#/components/parameters/orgName'
         post:
             tags:
-                - AgreementFields
+                - Organizations AgreementFields
             summary: Add an agreement field
             operationId: addAgreementField
             security:
                 - BearerAuth: []
             description: |
                 Adds a new field to the organization's agreement definition.
-                Requires organization admin role.
+                Requires organization admin role or system ADMIN role.
+                The field body must include name, description and type.
+                Type must be one of `string`, `enum` or `number`.
+                If type is `enum`, value must be an array; otherwise value must not be sent.
                 This field becomes part of the structure that agreements associated
-                with this organization's elements must follow.
+                with this organization's scopes must follow.
             requestBody:
                 $ref: '#/components/requestBodies/AgreementFieldBody'
             responses:
@@ -773,12 +595,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                 '400':
                     $ref: '#/components/responses/ValidationError'
                 '401':
@@ -798,13 +615,18 @@ paths:
             - $ref: '#/components/parameters/agreementFieldName'
         put:
             tags:
-                - AgreementFields
+                - Organizations AgreementFields
             summary: Update an agreement field
             operationId: updateAgreementField
             security:
                 - BearerAuth: []
             description: |
-                Updates an existing agreement field. Requires organization admin role.
+                Updates an existing agreement field.
+                Requires organization admin role or system ADMIN role.
+                The existing field must belong to the organization's agreementFields.
+                The field body must include name, description and type.
+                Type must be one of `string`, `enum` or `number`.
+                If type is `enum`, value must be an array; otherwise value must not be sent.
                 If the name is changed, the new name must be unique within the
                 organization's agreementFields.
             requestBody:
@@ -815,12 +637,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                 '400':
                     $ref: '#/components/responses/ValidationError'
                 '401':
@@ -835,26 +652,22 @@ paths:
                     $ref: '#/components/responses/InternalError'
         delete:
             tags:
-                - AgreementFields
+                - Organizations AgreementFields
             summary: Delete an agreement field
             operationId: deleteAgreementField
             security:
                 - BearerAuth: []
             description: |
                 Removes a field from the organization's agreement definition.
-                Requires organization admin role.
+                Requires organization admin role or system ADMIN role.
+                The field must exist in the organization's agreementFields.
             responses:
                 '200':
                     description: Agreement field deleted. Returns the updated organization.
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Organization'
+                                $ref: '#/components/schemas/OrganizationResponse'
                 '401':
                     $ref: '#/components/responses/Unauthorized'
                 '403':
@@ -872,14 +685,14 @@ paths:
             - $ref: '#/components/parameters/orgName'
         get:
             tags:
-                - Members
+                - Organizations Members
             summary: List members of an organization
             operationId: getMembers
             security:
                 - BearerAuth: []
             description: |
                 Returns the memberships of the specified organization.
-                Requires organization admin role.
+                Requires organization admin role or system ADMIN role.
                 Use the `expand` query parameter to control the level of detail:
                 - `none` (default): returns raw ObjectIds
 
@@ -901,14 +714,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: array
-                                              items:
-                                                  $ref: '#/components/schemas/Membership'
+                                $ref: '#/components/schemas/MembershipsResponse'
                 '401':
                     $ref: '#/components/responses/Unauthorized'
                 '403':
@@ -919,14 +725,14 @@ paths:
                     $ref: '#/components/responses/InternalError'
         post:
             tags:
-                - Members
+                - Organizations Members
             summary: Add a user to the organization
             operationId: addUserToOrganization
             security:
                 - BearerAuth: []
             description: |
                 Adds an existing user as a member of the specified organization.
-                Requires organization admin role.
+                Requires organization admin role or system ADMIN role.
                 The user must exist in the system and must not already be a member.
                 There is a maximum member limit per organization (default 1000).
             requestBody:
@@ -937,12 +743,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Membership'
+                                $ref: '#/components/schemas/MembershipResponse'
                             example:
                                 success: true
                                 message: User added to organization
@@ -964,9 +765,46 @@ paths:
                 '403':
                     $ref: '#/components/responses/Forbidden'
                 '404':
-                    $ref: '#/components/responses/OrganizationNotFound'
+                    $ref: '#/components/responses/NotFound'
                 '409':
                     $ref: '#/components/responses/MemberConflict'
+                '500':
+                    $ref: '#/components/responses/InternalError'
+
+    /api/v1/organizations/{orgName}/members/me/admin:
+        parameters:
+            - $ref: '#/components/parameters/orgName'
+        get:
+            tags:
+                - Organizations Members
+            summary: Check if current member is organization admin
+            operationId: isCurrentUserOrganizationAdmin
+            security:
+                - BearerAuth: []
+            description: |
+                Returns whether the authenticated user has the `admin` role in the organization.
+                Requires the authenticated user to be a member of the organization or to have system ADMIN role.
+                Users with system ADMIN role always receive `true`.
+                Organization members receive `true` only when their membership includes the organization admin role.
+            responses:
+                '200':
+                    description: Current user's organization admin status
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AdminStatusResponse'
+                            example:
+                                success: true
+                                message: OK
+                                httpStatus: 200
+                                appCode: SUCCESS
+                                data:
+                                    isAdmin: true
+                                error: null
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
+                '404':
+                    $ref: '#/components/responses/OrganizationNotFound'
                 '500':
                     $ref: '#/components/responses/InternalError'
 
@@ -976,30 +814,25 @@ paths:
             - $ref: '#/components/parameters/memberUsername'
         delete:
             tags:
-                - Members
+                - Organizations Members
             summary: Remove a user from the organization
             operationId: removeUserFromOrganization
             security:
                 - BearerAuth: []
             description: |
                 Removes a user from the specified organization, deleting
-                the associated membership. Requires organization admin role.
+                the associated membership.
+                Requires organization admin role or system ADMIN role.
                 The user must be a current member of the organization.
                 An admin cannot remove themselves from the organization.
+                The organization creator cannot be removed.
             responses:
                 '200':
                     description: User removed from the organization successfully
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: object
-                                              nullable: true
-                                              example: null
+                                $ref: '#/components/schemas/NullResponse'
                             example:
                                 success: true
                                 message: User removed from organization
@@ -1014,94 +847,189 @@ paths:
                 '403':
                     $ref: '#/components/responses/Forbidden'
                 '404':
-                    $ref: '#/components/responses/MemberNotFound'
+                    $ref: '#/components/responses/NotFound'
+                '500':
+                    $ref: '#/components/responses/InternalError'
+
+    /api/v1/organizations/{orgName}/members/{username}/roles:
+        parameters:
+            - $ref: '#/components/parameters/orgName'
+            - $ref: '#/components/parameters/memberUsername'
+        post:
+            tags:
+                - Organizations Members
+            summary: Replace member roles
+            operationId: replaceMemberRoles
+            security:
+                - BearerAuth: []
+            description: |
+                Replaces all roles assigned to the member with the selected role names.
+                Requires organization admin role or system ADMIN role.
+                The target user must be a current member of the organization.
+                Role names must exist in the organization and cannot be duplicated.
+                Send an empty array to leave a non-creator member without roles.
+                If the member is the organization creator, the array must include `admin`.
+            requestBody:
+                $ref: '#/components/requestBodies/MemberRolesBody'
+            responses:
+                '200':
+                    description: Member roles updated successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MembershipResponse'
+                            example:
+                                success: true
+                                message: User roles updated
+                                httpStatus: 200
+                                appCode: SUCCESS
+                                data:
+                                    _id: 665c3d4e5f6a7b8c9d0e1f2a
+                                    organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                    userId: 665d4e5f6a7b8c9d0e1f2a3b
+                                    rolesId:
+                                        - 665b2c3d4e5f6a7b8c9d0e1f
+                                    createdAt: '2025-06-01T10:00:00.000Z'
+                                    updatedAt: '2025-06-01T10:00:00.000Z'
+                                    __v: 0
+                                error: null
+                '400':
+                    $ref: '#/components/responses/ValidationError'
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
+                '403':
+                    $ref: '#/components/responses/Forbidden'
+                '404':
+                    $ref: '#/components/responses/NotFound'
                 '500':
                     $ref: '#/components/responses/InternalError'
 
     # ──────────────────────────────────────────────
-    # Elements
+    # Scopes
     # ──────────────────────────────────────────────
-    /api/v1/organizations/{orgName}/elements:
+    /api/v1/organizations/{orgName}/scopes:
         parameters:
             - $ref: '#/components/parameters/orgName'
         get:
             tags:
-                - Elements
-            summary: List elements of an organization
-            operationId: getElementsByOrganization
+                - Scopes
+            summary: List scopes of an organization
+            operationId: getScopesByOrganization
             security:
                 - BearerAuth: []
             description: |
-                Returns all elements belonging to the specified organization.
+                Returns all scopes belonging to the specified organization as a tree.
+                Root scopes are returned at the first level and every scope nests its
+                descendants inside its `children` array.
+                The organization must exist.
             responses:
                 '200':
-                    description: List of elements retrieved successfully
+                    description: List of scopes retrieved successfully
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: array
-                                              items:
-                                                  $ref: '#/components/schemas/Element'
+                                $ref: '#/components/schemas/ScopesResponse'
+                            example:
+                                success: true
+                                message: OK
+                                httpStatus: 200
+                                appCode: SUCCESS
+                                data:
+                                    - _id: 665a2b3c4d5e6f7a8b9c0d1e
+                                      name: psg2-2425
+                                      description: Curso PSG2 año 2024/2025
+                                      type: Organizations
+                                      organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      fields: []
+                                      permissions:
+                                          view: []
+                                          edit: []
+                                          delete: []
+                                          create: []
+                                      config:
+                                          owner: gii-is-psg2
+                                          token: your-token-here-24/25
+                                      children:
+                                          - _id: 665b1c2d3e4f5a6b7c8d9e0f
+                                            name: gii-is-g1
+                                            description: Repositorio del grupo 1 de la asignatura
+                                            type: Repositories
+                                            organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                            parentId: 665a2b3c4d5e6f7a8b9c0d1e
+                                            fields: []
+                                            permissions:
+                                                view: []
+                                                edit: []
+                                                delete: []
+                                                create: []
+                                            config:
+                                                repository: psg2-2425-g1
+                                            children:
+                                                - _id: 665c2d3e4f5a6b7c8d9e0f1a
+                                                  name: Ana
+                                                  description: miembro del grupo 1
+                                                  type: Members
+                                                  organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                                  parentId: 665b1c2d3e4f5a6b7c8d9e0f
+                                                  fields: []
+                                                  permissions:
+                                                      view: []
+                                                      edit: []
+                                                      delete: []
+                                                      create: []
+                                                  config:
+                                                      username: ana92837
+                                                  children: []
+                                error: null
                 '404':
                     $ref: '#/components/responses/OrganizationNotFound'
                 '500':
                     $ref: '#/components/responses/InternalError'
         post:
             tags:
-                - Elements
-            summary: Create an element
-            operationId: createElement
+                - Scopes
+            summary: Create a scope
+            operationId: createScope
             security:
                 - BearerAuth: []
             description: |
-                Creates a new element within the specified organization.
-                The element name must be unique within the organization.
-                Fields must reference existing element fields defined in the organization.
+                Creates a new scope within the specified organization.
+                The organization must exist.
+                The body must include name, type, fields, permissions and config.
+                `description` is optional and `parentId` places the scope under an existing
+                scope of the same organization; leave it out to create a root scope.
+                The scope name must be unique within the organization.
+                Fields must reference existing scope fields defined in the organization.
                 Permission roles must reference existing roles in the organization.
             requestBody:
-                $ref: '#/components/requestBodies/ElementBody'
+                $ref: '#/components/requestBodies/ScopeBody'
             responses:
                 '201':
-                    description: Element created successfully
+                    description: Scope created successfully
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Element'
+                                $ref: '#/components/schemas/ScopeResponse'
                             example:
                                 success: true
-                                message: Element created
+                                message: Scope created
                                 httpStatus: 201
                                 appCode: SUCCESS
                                 data:
-                                    _id: 665b1c2d3e4f5a6b7c8d9e0f
-                                    name: L1-01
-                                    description: Equipo L1-01 de PSG2
+                                    _id: 665e4f5a6b7c8d9e0f1a2b3c
+                                    name: gii-is-g2
+                                    description: Repositorio del grupo 2 de la asignatura
+                                    type: Repositories
                                     organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                    parentId: 665a2b3c4d5e6f7a8b9c0d1e
                                     fields: []
                                     permissions:
                                         view: []
                                         edit: []
                                         delete: []
                                         create: []
-                                    auditConfig:
-                                        owner: universidad-sevilla
-                                        repository: L1-01-project
-                                    parts:
-                                        - _id: 665c2d3e4f5a6b7c8d9e0f1a
-                                          auditConfig:
-                                              credentials:
-                                                  github:
-                                                      username: juan
+                                    config:
+                                        repository: psg2-2425-g2
                                     createdAt: '2026-01-15T10:00:00.000Z'
                                     updatedAt: '2026-01-15T10:00:00.000Z'
                                     __v: 0
@@ -1115,85 +1043,177 @@ paths:
                 '500':
                     $ref: '#/components/responses/InternalError'
 
-    /api/v1/organizations/{orgName}/elements/{elementName}:
+    /api/v1/organizations/{orgName}/scopes/tree:
         parameters:
             - $ref: '#/components/parameters/orgName'
-            - $ref: '#/components/parameters/elementName'
-        get:
+        post:
             tags:
-                - Elements
-            summary: Get an element by name
-            operationId: getElementByName
+                - Scopes
+            summary: Create a tree of scopes
+            operationId: createScopes
             security:
                 - BearerAuth: []
             description: |
-                Returns a specific element identified by its name within the organization.
+                Creates a whole hierarchy of scopes in a single request.
+                The organization must exist.
+                The body must be an array of root scopes, each one nesting its descendants
+                inside its `children` array. A leaf scope declares an empty `children` array.
+                Parent identifiers are generated by the server while walking the tree, so
+                `parentId` must not be sent.
+                `fields` and `permissions` are not accepted here: every scope is created with
+                them empty and they are managed from the individual scope endpoints.
+                Scope names must be unique within the organization.
+            requestBody:
+                $ref: '#/components/requestBodies/ScopesTreeBody'
             responses:
-                '200':
-                    description: Element found
+                '201':
+                    description: Scopes created successfully
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Element'
+                                $ref: '#/components/schemas/ScopesResponse'
+                            example:
+                                success: true
+                                message: Scopes created
+                                httpStatus: 201
+                                appCode: SUCCESS
+                                data:
+                                    - _id: 665a2b3c4d5e6f7a8b9c0d1e
+                                      name: psg2-2425
+                                      description: Curso PSG2 año 2024/2025
+                                      type: Organizations
+                                      organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      fields: []
+                                      permissions:
+                                          view: []
+                                          edit: []
+                                          delete: []
+                                          create: []
+                                      config:
+                                          owner: gii-is-psg2
+                                          token: your-token-here-24/25
+                                    - _id: 665b1c2d3e4f5a6b7c8d9e0f
+                                      name: gii-is-g1
+                                      description: Repositorio del grupo 1 de la asignatura
+                                      type: Repositories
+                                      organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      parentId: 665a2b3c4d5e6f7a8b9c0d1e
+                                      fields: []
+                                      permissions:
+                                          view: []
+                                          edit: []
+                                          delete: []
+                                          create: []
+                                      config:
+                                          repository: psg2-2425-g1
+                                    - _id: 665c2d3e4f5a6b7c8d9e0f1a
+                                      name: Ana
+                                      description: miembro del grupo 1
+                                      type: Members
+                                      organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      parentId: 665b1c2d3e4f5a6b7c8d9e0f
+                                      fields: []
+                                      permissions:
+                                          view: []
+                                          edit: []
+                                          delete: []
+                                          create: []
+                                      config:
+                                          username: ana92837
+                                    - _id: 665d3e4f5a6b7c8d9e0f1a2b
+                                      name: Pepe
+                                      description: miembro del grupo 1
+                                      type: Members
+                                      organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      parentId: 665b1c2d3e4f5a6b7c8d9e0f
+                                      fields: []
+                                      permissions:
+                                          view: []
+                                          edit: []
+                                          delete: []
+                                          create: []
+                                      config:
+                                          username: pepe777
+                                error: null
+                '400':
+                    $ref: '#/components/responses/ValidationError'
                 '404':
-                    $ref: '#/components/responses/ElementNotFound'
+                    $ref: '#/components/responses/OrganizationNotFound'
+                '409':
+                    $ref: '#/components/responses/Conflict'
+                '500':
+                    $ref: '#/components/responses/InternalError'
+
+    /api/v1/organizations/{orgName}/scopes/{scopeName}:
+        parameters:
+            - $ref: '#/components/parameters/orgName'
+            - $ref: '#/components/parameters/scopeName'
+        get:
+            tags:
+                - Scopes
+            summary: Get a scope by name
+            operationId: getScopeByName
+            security:
+                - BearerAuth: []
+            description: |
+                Returns a specific scope identified by its name within the organization.
+                The organization and scope must exist.
+            responses:
+                '200':
+                    description: Scope found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ScopeResponse'
+                '404':
+                    $ref: '#/components/responses/ScopeNotFound'
                 '500':
                     $ref: '#/components/responses/InternalError'
         put:
             tags:
-                - Elements
-            summary: Update an element
-            operationId: updateElement
+                - Scopes
+            summary: Update a scope
+            operationId: updateScope
             security:
                 - BearerAuth: []
             description: |
-                Updates an existing element. All fields must be sent in the body.
-                Fields must reference existing element fields defined in the organization.
+                Updates an existing scope. All required fields must be sent in the body.
+                The organization and scope must exist.
+                The body must include name, type, fields, permissions and config,
+                and `description` is optional.
+                The position of the scope in the hierarchy cannot be changed through this
+                endpoint: `parentId` is only assigned on creation and is ignored here.
+                Fields must reference existing scope fields defined in the organization.
                 Permission roles must reference existing roles in the organization.
             requestBody:
-                $ref: '#/components/requestBodies/ElementBody'
+                $ref: '#/components/requestBodies/ScopeBody'
             responses:
                 '200':
-                    description: Element updated successfully
+                    description: Scope updated successfully
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Element'
+                                $ref: '#/components/schemas/ScopeResponse'
                             example:
                                 success: true
-                                message: Element updated
+                                message: Scope updated
                                 httpStatus: 200
                                 appCode: SUCCESS
                                 data:
                                     _id: 665b1c2d3e4f5a6b7c8d9e0f
-                                    name: L1-01
-                                    description: Equipo L1-01 de PSG2 actualizado
+                                    name: gii-is-g1
+                                    description: Repositorio del grupo 1 actualizado
+                                    type: Repositories
                                     organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                    parentId: 665a2b3c4d5e6f7a8b9c0d1e
                                     fields: []
                                     permissions:
                                         view: []
                                         edit: []
                                         delete: []
                                         create: []
-                                    auditConfig:
-                                        owner: universidad-sevilla
-                                        repository: L1-01-project
-                                    parts:
-                                        - _id: 665c2d3e4f5a6b7c8d9e0f1a
-                                          auditConfig:
-                                              credentials:
-                                                  github:
-                                                      username: juan
+                                    config:
+                                        repository: psg2-2425-g1
                                     createdAt: '2026-01-15T10:00:00.000Z'
                                     updatedAt: '2026-01-15T12:00:00.000Z'
                                     __v: 0
@@ -1201,324 +1221,75 @@ paths:
                 '400':
                     $ref: '#/components/responses/ValidationError'
                 '404':
-                    $ref: '#/components/responses/ElementNotFound'
+                    $ref: '#/components/responses/ScopeNotFound'
                 '409':
                     $ref: '#/components/responses/Conflict'
                 '500':
                     $ref: '#/components/responses/InternalError'
         delete:
             tags:
-                - Elements
-            summary: Delete an element
-            operationId: deleteElement
+                - Scopes
+            summary: Delete a scope and its descendants
+            operationId: deleteScopesByParent
             security:
                 - BearerAuth: []
             description: |
-                Permanently deletes an element and all its associated agreement collections
-                (which in turn delete their signatures).
+                Permanently deletes the scope together with every descendant hanging
+                from it, walking the hierarchy level by level.
+                The organization and scope must exist.
             responses:
                 '200':
-                    description: Element deleted successfully
+                    description: Scope deleted successfully
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: object
-                                              nullable: true
-                                              example: null
+                                $ref: '#/components/schemas/NullResponse'
                             example:
                                 success: true
-                                message: Element deleted
+                                message: Scope deleted
                                 httpStatus: 200
                                 appCode: SUCCESS
                                 data: null
                                 error: null
                 '404':
-                    $ref: '#/components/responses/ElementNotFound'
+                    $ref: '#/components/responses/ScopeNotFound'
                 '500':
                     $ref: '#/components/responses/InternalError'
 
     # ──────────────────────────────────────────────
-    # Element Parts
+    # Scope Permissions
     # ──────────────────────────────────────────────
-    /api/v1/organizations/{orgName}/elements/{elementName}/parts:
+    /api/v1/organizations/{orgName}/scopes/{scopeName}/permissions/{permissionName}:
         parameters:
             - $ref: '#/components/parameters/orgName'
-            - $ref: '#/components/parameters/elementName'
-        get:
-            tags:
-                - ElementParts
-            summary: List parts of an element
-            operationId: getElementParts
-            security:
-                - BearerAuth: []
-            description: |
-                Returns all parts belonging to the specified element.
-            responses:
-                '200':
-                    description: List of parts retrieved successfully
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: array
-                                              items:
-                                                  $ref: '#/components/schemas/ElementPart'
-                            example:
-                                success: true
-                                message: OK
-                                httpStatus: 200
-                                appCode: SUCCESS
-                                data:
-                                    - _id: 665c2d3e4f5a6b7c8d9e0f1a
-                                      auditConfig:
-                                          owner: universidad-sevilla
-                                          repository: L1-01-project
-                                error: null
-                '404':
-                    $ref: '#/components/responses/ElementNotFound'
-                '500':
-                    $ref: '#/components/responses/InternalError'
-        post:
-            tags:
-                - ElementParts
-            summary: Add a part to an element
-            operationId: addElementPart
-            security:
-                - BearerAuth: []
-            description: |
-                Adds a new part to the specified element.
-                Each part has its own auditConfig.
-            requestBody:
-                $ref: '#/components/requestBodies/ElementPartBody'
-            responses:
-                '201':
-                    description: Part created successfully
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Element'
-                            example:
-                                success: true
-                                message: Element part created
-                                httpStatus: 201
-                                appCode: SUCCESS
-                                data:
-                                    _id: 665b1c2d3e4f5a6b7c8d9e0f
-                                    name: L1-01
-                                    description: Equipo L1-01 de PSG2
-                                    organizationId: 665a1b2c3d4e5f6a7b8c9d0e
-                                    fields: []
-                                    permissions:
-                                        view: []
-                                        edit: []
-                                        delete: []
-                                        create: []
-                                    auditConfig:
-                                        owner: universidad-sevilla
-                                        repository: L1-01-project
-                                    parts:
-                                        - _id: 665c2d3e4f5a6b7c8d9e0f1a
-                                          auditConfig:
-                                              owner: universidad-sevilla
-                                              repository: L1-01-project
-                                    createdAt: '2026-01-15T10:00:00.000Z'
-                                    updatedAt: '2026-01-15T11:00:00.000Z'
-                                    __v: 0
-                                error: null
-                '400':
-                    $ref: '#/components/responses/ValidationError'
-                '404':
-                    $ref: '#/components/responses/ElementNotFound'
-                '500':
-                    $ref: '#/components/responses/InternalError'
-
-    /api/v1/organizations/{orgName}/elements/{elementName}/parts/{partId}:
-        parameters:
-            - $ref: '#/components/parameters/orgName'
-            - $ref: '#/components/parameters/elementName'
-            - $ref: '#/components/parameters/partId'
-        get:
-            tags:
-                - ElementParts
-            summary: Get a part by ID
-            operationId: getElementPartById
-            security:
-                - BearerAuth: []
-            description: |
-                Returns a specific part identified by its ID within the element.
-            responses:
-                '200':
-                    description: Part found
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/ElementPart'
-                            example:
-                                success: true
-                                message: OK
-                                httpStatus: 200
-                                appCode: SUCCESS
-                                data:
-                                    _id: 665c2d3e4f5a6b7c8d9e0f1a
-                                    auditConfig:
-                                        owner: universidad-sevilla
-                                        repository: L1-01-project
-                                error: null
-                '400':
-                    $ref: '#/components/responses/ValidationError'
-                '404':
-                    $ref: '#/components/responses/ElementNotFound'
-                '500':
-                    $ref: '#/components/responses/InternalError'
-        put:
-            tags:
-                - ElementParts
-            summary: Update a part
-            operationId: updateElementPart
-            security:
-                - BearerAuth: []
-            description: |
-                Updates the auditConfig of an existing part.
-            requestBody:
-                $ref: '#/components/requestBodies/ElementPartBody'
-            responses:
-                '200':
-                    description: Part updated successfully
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Element'
-                            example:
-                                success: true
-                                message: Element part updated
-                                httpStatus: 200
-                                appCode: SUCCESS
-                                data:
-                                    _id: 665b1c2d3e4f5a6b7c8d9e0f
-                                    name: L1-01
-                                    description: Equipo L1-01 de PSG2
-                                    organizationId: 665a1b2c3d4e5f6a7b8c9d0e
-                                    fields: []
-                                    permissions:
-                                        view: []
-                                        edit: []
-                                        delete: []
-                                        create: []
-                                    auditConfig:
-                                        owner: universidad-sevilla
-                                        repository: L1-01-project
-                                    parts:
-                                        - _id: 665c2d3e4f5a6b7c8d9e0f1a
-                                          auditConfig:
-                                              owner: universidad-sevilla
-                                              repository: L1-01-updated
-                                    createdAt: '2026-01-15T10:00:00.000Z'
-                                    updatedAt: '2026-01-15T12:00:00.000Z'
-                                    __v: 0
-                                error: null
-                '400':
-                    $ref: '#/components/responses/ValidationError'
-                '404':
-                    $ref: '#/components/responses/ElementNotFound'
-                '500':
-                    $ref: '#/components/responses/InternalError'
-        delete:
-            tags:
-                - ElementParts
-            summary: Delete a part
-            operationId: deleteElementPart
-            security:
-                - BearerAuth: []
-            description: |
-                Permanently deletes a part from the element.
-            responses:
-                '200':
-                    description: Part deleted successfully
-                    content:
-                        application/json:
-                            schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              type: object
-                                              nullable: true
-                                              example: null
-                            example:
-                                success: true
-                                message: Element part deleted
-                                httpStatus: 200
-                                appCode: SUCCESS
-                                data: null
-                                error: null
-                '400':
-                    $ref: '#/components/responses/ValidationError'
-                '404':
-                    $ref: '#/components/responses/ElementNotFound'
-                '500':
-                    $ref: '#/components/responses/InternalError'
-
-    # ──────────────────────────────────────────────
-    # Element Permissions
-    # ──────────────────────────────────────────────
-    /api/v1/organizations/{orgName}/elements/{elementName}/permissions/{permissionName}:
-        parameters:
-            - $ref: '#/components/parameters/orgName'
-            - $ref: '#/components/parameters/elementName'
+            - $ref: '#/components/parameters/scopeName'
             - $ref: '#/components/parameters/permissionName'
         post:
             tags:
-                - ElementPermissions
-            summary: Add roles to an element permission
-            operationId: addRoleToElementPermission
+                - ScopePermissions
+            summary: Add roles to a scope permission
+            operationId: addRoleToScopePermission
             security:
                 - BearerAuth: []
             description: |
-                Adds one or more roles to a specific permission (view, edit, delete, create) of the element.
+                Adds one or more roles to a specific permission (view, edit, delete, create) of the scope.
+                The organization and scope must exist.
+                The permission name must be one of `view`, `edit`, `delete` or `create`.
+                The body must include a non-empty roles array.
                 The roles must exist in the organization.
             requestBody:
-                $ref: '#/components/requestBodies/ElementPermissionRolesBody'
+                $ref: '#/components/requestBodies/ScopePermissionRolesBody'
             responses:
                 '200':
                     description: Roles added to permission successfully
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    - $ref: '#/components/schemas/SuccessResponse'
-                                    - type: object
-                                      properties:
-                                          data:
-                                              $ref: '#/components/schemas/Element'
+                                $ref: '#/components/schemas/ScopeResponse'
                 '400':
                     $ref: '#/components/responses/ValidationError'
                 '404':
-                    $ref: '#/components/responses/ElementNotFound'
+                    $ref: '#/components/responses/ScopeNotFound'
                 '500':
                     $ref: '#/components/responses/InternalError'
 
@@ -1532,7 +1303,7 @@ components:
             type: http
             scheme: bearer
             bearerFormat: JWT
-            description: JWT token obtained via POST /api/v1/users/login
+            description: JWT bearer token
 
     # ── Parameters ────────────────────────────────
     parameters:
@@ -1544,6 +1315,27 @@ components:
             schema:
                 type: string
             example: universidad-sevilla
+        paginationPage:
+            name: page
+            in: query
+            required: false
+            description: Page number. Must be a positive integer. Defaults to 1.
+            schema:
+                type: integer
+                minimum: 1
+                default: 1
+            example: 1
+        paginationLimit:
+            name: limit
+            in: query
+            required: false
+            description: Number of results per page. Must be an integer between 1 and 100. Defaults to 10.
+            schema:
+                type: integer
+                minimum: 1
+                maximum: 100
+                default: 10
+            example: 10
         roleName:
             name: roleName
             in: path
@@ -1552,11 +1344,11 @@ components:
             schema:
                 type: string
             example: member
-        elementFieldName:
+        scopeFieldName:
             name: fieldName
             in: path
             required: true
-            description: Name of the element field
+            description: Name of the scope field
             schema:
                 type: string
             example: class
@@ -1576,22 +1368,14 @@ components:
             schema:
                 type: string
             example: janedoe
-        elementName:
-            name: elementName
+        scopeName:
+            name: scopeName
             in: path
             required: true
-            description: Unique name of the element within the organization
+            description: Unique name of the scope within the organization
             schema:
                 type: string
-            example: L1-01
-        partId:
-            name: partId
-            in: path
-            required: true
-            description: MongoDB ObjectId of the element part
-            schema:
-                type: string
-            example: 665c2d3e4f5a6b7c8d9e0f1a
+            example: gii-is-g1
         permissionName:
             name: permissionName
             in: path
@@ -1605,7 +1389,11 @@ components:
     # ── Request Bodies ────────────────────────────
     requestBodies:
         OrganizationBody:
-            description: Data to create or update an organization
+            description: |
+                Data to create or update an organization.
+                `name` is required, must be 3-100 characters and can only contain letters, numbers and hyphens.
+                `displayName` is optional and must be at most 200 characters.
+                `description` is required and must be 3-500 characters.
             required: true
             content:
                 application/json:
@@ -1615,8 +1403,40 @@ components:
                         name: universidad-sevilla
                         displayName: Universidad de Sevilla
                         description: Organization for Universidad de Sevilla
+        OrganizationSearchBody:
+            description: |
+                Optional filters to search organizations by name, displayName or both.
+                `nameOrDisplayName` searches across name and displayName and must be 1-200 characters.
+                `name` must be 1-100 characters.
+                `displayName` must be 1-200 characters.
+            required: false
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/OrganizationSearchFilters'
+                    examples:
+                        byNameOrDisplayName:
+                            summary: Search by name or displayName
+                            value:
+                                nameOrDisplayName: sevilla
+                        byName:
+                            summary: Search by name
+                            value:
+                                name: universidad-sevilla
+                        byDisplayName:
+                            summary: Search by displayName
+                            value:
+                                displayName: Universidad de Sevilla
+                        byNameAndDisplayName:
+                            summary: Search by name and displayName
+                            value:
+                                name: universidad
+                                displayName: Sevilla
         RoleBody:
-            description: Data to create or update a role
+            description: |
+                Data to create or update a role.
+                `name` and `description` are required strings.
+                `name` must be 3-100 characters and `description` must be 3-500 characters.
             required: true
             content:
                 application/json:
@@ -1625,16 +1445,34 @@ components:
                     example:
                         name: member
                         description: Organization member
+        MemberRolesBody:
+            description: |
+                Role names that must replace the member's current roles.
+                If the member is the organization creator, `admin` must be included.
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: array
+                        description: Array of role names
+                        uniqueItems: true
+                        items:
+                            type: string
+                        example:
+                            - admin
+                            - member
         FieldBody:
             description: |
-                Data to create or update an element field.
+                Data to create or update a scope field.
+                `name`, `description` and `type` are required.
+                `name` must be 3-100 characters and `description` must be 3-500 characters.
                 If `type` is `enum`, the `value` field is required and must be an array.
                 For any other type, `value` must not be sent.
             required: true
             content:
                 application/json:
                     schema:
-                        $ref: '#/components/schemas/ElementFieldInput'
+                        $ref: '#/components/schemas/ScopeFieldInput'
                     examples:
                         enumField:
                             summary: Enum type field
@@ -1650,11 +1488,13 @@ components:
                             summary: String type field
                             value:
                                 name: title
-                                description: Element title
+                                description: Scope title
                                 type: string
         AgreementFieldBody:
             description: |
                 Data to create or update an agreement field.
+                `name`, `description` and `type` are required.
+                `name` must be 3-100 characters and `description` must be 3-500 characters.
                 If `type` is `enum`, the `value` field is required and must be an array.
                 For any other type, `value` must not be sent.
             required: true
@@ -1681,7 +1521,7 @@ components:
                                     - bronze
 
         MemberBody:
-            description: Data to add a user to an organization
+            description: Data to add a user to an organization. The username must belong to an existing user and cannot already be a member of the organization.
             required: true
             content:
                 application/json:
@@ -1690,45 +1530,98 @@ components:
                     example:
                         username: janedoe
 
-        ElementBody:
-            description: Data to create or update an element
+        ScopeBody:
+            description: |
+                Data to create or update a scope.
+                `name`, `type`, `fields`, `permissions` and `config` are required.
+                `name` must be a string between 2 and 100 characters.
+                `description` is optional and must be a string between 3 and 500 characters.
+                `fields` must be an array, `permissions` and `config` must be objects.
+                `parentId` is only used on creation and must reference an existing scope
+                of the same organization; leave it out to create a root scope.
+                Each field name must exist in the organization's scopeFields.
+                Each permission value must be an array of role names that exist in the organization.
             required: true
             content:
                 application/json:
                     schema:
-                        $ref: '#/components/schemas/ElementInput'
-                    example:
-                        name: L1-01
-                        description: Equipo L1-01 de PSG2
-                        fields: []
-                        permissions:
-                            view: []
-                            edit: []
-                            delete: []
-                            create: []
-                        auditConfig:
-                            owner: universidad-sevilla
-                            repository: L1-01-project
-                        parts:
-                            - auditConfig:
-                                  credentials:
-                                      github:
-                                          username: juan
+                        $ref: '#/components/schemas/ScopeInput'
+                    examples:
+                        rootScope:
+                            summary: New organization as a root scope
+                            value:
+                                name: psg2-2526
+                                description: Curso PSG2 año 2025/2026
+                                type: Organizations
+                                fields: []
+                                permissions:
+                                    view: []
+                                    edit: []
+                                    delete: []
+                                    create: []
+                                config:
+                                    owner: gii-is-psg2
+                                    token: your-token-here-25/26
+                        childScope:
+                            summary: New repository under an existing organization
+                            value:
+                                name: gii-is-g2
+                                description: Repositorio del grupo 2 de la asignatura
+                                type: Repositories
+                                parentId: 665a2b3c4d5e6f7a8b9c0d1e
+                                fields: []
+                                permissions:
+                                    view: []
+                                    edit: []
+                                    delete: []
+                                    create: []
+                                config:
+                                    repository: psg2-2425-g2
 
-        ElementPartBody:
-            description: Data to create or update an element part
+        ScopesTreeBody:
+            description: |
+                Array of root scopes to create, each one nesting its descendants inside
+                its `children` array. A leaf scope declares an empty `children` array.
+                `parentId` must not be sent: the server generates the identifiers while
+                walking the tree.
+                `fields` and `permissions` are not accepted either: every scope is created
+                with them empty and they are managed from the individual scope endpoints.
             required: true
             content:
                 application/json:
                     schema:
-                        $ref: '#/components/schemas/ElementPartInput'
+                        type: array
+                        items:
+                            $ref: '#/components/schemas/ScopeNodeInput'
                     example:
-                        auditConfig:
-                            owner: universidad-sevilla
-                            repository: L1-01-project
+                        - name: psg2-2425
+                          description: Curso PSG2 año 2024/2025
+                          type: Organizations
+                          config:
+                              owner: gii-is-psg2
+                              token: your-token-here-24/25
+                          children:
+                              - name: gii-is-g1
+                                description: Repositorio del grupo 1 de la asignatura
+                                type: Repositories
+                                config:
+                                    repository: psg2-2425-g1
+                                children:
+                                    - name: Ana
+                                      description: miembro del grupo 1
+                                      type: Members
+                                      config:
+                                          username: ana92837
+                                      children: []
+                                    - name: Pepe
+                                      description: miembro del grupo 1
+                                      type: Members
+                                      config:
+                                          username: pepe777
+                                      children: []
 
-        ElementPermissionRolesBody:
-            description: Roles to add to an element permission
+        ScopePermissionRolesBody:
+            description: Roles to add to a scope permission. The roles array is required, must not be empty and must contain strings.
             required: true
             content:
                 application/json:
@@ -1853,35 +1746,35 @@ components:
                         error:
                             message: "Role 'admin' already exists in organization 'universidad-sevilla'"
                             details: null
-        ElementFieldNotFound:
-            description: The element field does not exist in the organization
+        ScopeFieldNotFound:
+            description: The scope field does not exist in the organization
             content:
                 application/json:
                     schema:
                         $ref: '#/components/schemas/ErrorResponse'
                     example:
                         success: false
-                        message: "elementFields 'class' not found in organization 'universidad-sevilla'"
+                        message: "scopeFields 'class' not found in organization 'universidad-sevilla'"
                         httpStatus: 404
                         appCode: NOT_FOUND
                         data: null
                         error:
-                            message: "elementFields 'class' not found in organization 'universidad-sevilla'"
+                            message: "scopeFields 'class' not found in organization 'universidad-sevilla'"
                             details: null
-        ElementFieldConflict:
-            description: An element field with that name already exists in the organization
+        ScopeFieldConflict:
+            description: A scope field with that name already exists in the organization
             content:
                 application/json:
                     schema:
                         $ref: '#/components/schemas/ErrorResponse'
                     example:
                         success: false
-                        message: "elementFields 'class' already exists in organization 'universidad-sevilla'"
+                        message: "scopeFields 'class' already exists in organization 'universidad-sevilla'"
                         httpStatus: 409
                         appCode: DUPLICATE_KEY
                         data: null
                         error:
-                            message: "elementFields 'class' already exists in organization 'universidad-sevilla'"
+                            message: "scopeFields 'class' already exists in organization 'universidad-sevilla'"
                             details: null
         AgreementFieldNotFound:
             description: The agreement field does not exist in the organization
@@ -1913,21 +1806,6 @@ components:
                         error:
                             message: "agreementFields 'minResponseTime' already exists in organization 'universidad-sevilla'"
                             details: null
-        LimitExceeded:
-            description: The maximum allowed limit has been reached
-            content:
-                application/json:
-                    schema:
-                        $ref: '#/components/schemas/ErrorResponse'
-                    example:
-                        success: false
-                        message: "Organization 'universidad-sevilla' has reached the maximum limit of 100 roles."
-                        httpStatus: 403
-                        appCode: LIMIT_EXCEEDED
-                        data: null
-                        error:
-                            message: "Organization 'universidad-sevilla' has reached the maximum limit of 100 roles."
-                            details: null
         MemberConflict:
             description: The user is already a member of the organization
             content:
@@ -1937,41 +1815,26 @@ components:
                     example:
                         success: false
                         message: "The user 'johndoe' already exists in organization 'universidad-sevilla'"
-                        httpStatus: 400
-                        appCode: VALIDATION_ERROR
+                        httpStatus: 409
+                        appCode: DUPLICATE_KEY
                         data: null
                         error:
                             message: "The user 'johndoe' already exists in organization 'universidad-sevilla'"
                             details: null
-        ElementNotFound:
-            description: The element was not found in the organization
+        ScopeNotFound:
+            description: The scope was not found in the organization
             content:
                 application/json:
                     schema:
                         $ref: '#/components/schemas/ErrorResponse'
                     example:
                         success: false
-                        message: "Element with name 'L1-01' not found in organization"
+                        message: "Scope with name 'gii-is-g1' not found in organization"
                         httpStatus: 404
                         appCode: NOT_FOUND
                         data: null
                         error:
-                            message: "Element with name 'L1-01' not found in organization"
-                            details: null
-        MemberNotFound:
-            description: The user is not a member of the organization
-            content:
-                application/json:
-                    schema:
-                        $ref: '#/components/schemas/ErrorResponse'
-                    example:
-                        success: false
-                        message: "The user 'johndoe' does not exist in organization 'universidad-sevilla'"
-                        httpStatus: 400
-                        appCode: VALIDATION_ERROR
-                        data: null
-                        error:
-                            message: "The user 'johndoe' does not exist in organization 'universidad-sevilla'"
+                            message: "Scope with name 'gii-is-g1' not found in organization"
                             details: null
         Unauthorized:
             description: Missing or invalid authentication token
@@ -2050,6 +1913,86 @@ components:
                 - data
                 - error
 
+        OrganizationResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          $ref: '#/components/schemas/Organization'
+
+        OrganizationsResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          type: array
+                          items:
+                              $ref: '#/components/schemas/Organization'
+                      pagination:
+                          $ref: '#/components/schemas/Pagination'
+
+        MembershipResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          $ref: '#/components/schemas/Membership'
+
+        MembershipsResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          type: array
+                          items:
+                              $ref: '#/components/schemas/Membership'
+
+        AdminStatusResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          type: object
+                          required:
+                              - isAdmin
+                          properties:
+                              isAdmin:
+                                  type: boolean
+                                  description: True when the authenticated user is organization admin or system admin
+
+        NullResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          type: object
+                          nullable: true
+                          example: null
+
+        ScopeResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          $ref: '#/components/schemas/Scope'
+
+        ScopesResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          type: array
+                          items:
+                              $ref: '#/components/schemas/Scope'
+
         ErrorResponse:
             type: object
             description: Standard wrapper for all error API responses
@@ -2084,17 +2027,50 @@ components:
                 - data
                 - error
 
+        Pagination:
+            type: object
+            description: Pagination metadata
+            properties:
+                page:
+                    type: integer
+                    example: 1
+                limit:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    example: 10
+                totalItems:
+                    type: integer
+                    example: 1
+                totalPages:
+                    type: integer
+                    example: 1
+                hasNextPage:
+                    type: boolean
+                    example: false
+                hasPreviousPage:
+                    type: boolean
+                    example: false
+            required:
+                - page
+                - limit
+                - totalItems
+                - totalPages
+                - hasNextPage
+                - hasPreviousPage
+
         # ── Organization ─────────────────────────
         Organization:
             type: object
             description: |
-                Main container of the system. Defines the structure of its elements,
+                Main container of the system. Defines the structure of its scopes,
                 the structure of its agreements and the available roles.
             required:
                 - _id
                 - name
                 - description
-                - elementFields
+                - createdBy
+                - scopeFields
                 - agreementFields
                 - roles
             properties:
@@ -2121,11 +2097,15 @@ components:
                     minLength: 3
                     maxLength: 500
                     example: Organization for Universidad de Sevilla
-                elementFields:
+                createdBy:
+                    type: string
+                    description: ObjectId of the user that created the organization
+                    example: 665d4e5f6a7b8c9d0e1f2a3b
+                scopeFields:
                     type: array
-                    description: Fields that define the structure of elements
+                    description: Fields that define the structure of scopes
                     items:
-                        $ref: '#/components/schemas/ElementField'
+                        $ref: '#/components/schemas/ScopeField'
                 agreementFields:
                     type: array
                     description: Fields that define the structure of agreements
@@ -2136,6 +2116,10 @@ components:
                     description: Available roles within the organization
                     items:
                         $ref: '#/components/schemas/Role'
+                members:
+                    type: integer
+                    description: Number of members in the organization
+                    example: 1
                 createdAt:
                     type: string
                     format: date-time
@@ -2175,6 +2159,29 @@ components:
                     maxLength: 500
                     example: Organization for Universidad de Sevilla
 
+        OrganizationSearchFilters:
+            type: object
+            description: Optional filters available when searching organizations
+            properties:
+                nameOrDisplayName:
+                    type: string
+                    description: Case-insensitive filter applied to organization name or displayName
+                    minLength: 1
+                    maxLength: 200
+                    example: sevilla
+                name:
+                    type: string
+                    description: Case-insensitive filter applied to organization name
+                    minLength: 1
+                    maxLength: 100
+                    example: universidad
+                displayName:
+                    type: string
+                    description: Case-insensitive filter applied to displayName
+                    minLength: 1
+                    maxLength: 200
+                    example: Sevilla
+
         # ── Role ─────────────────────────────────
         Role:
             type: object
@@ -2191,11 +2198,13 @@ components:
                 name:
                     type: string
                     description: Role name (unique within the organization)
+                    minLength: 3
                     maxLength: 100
                     example: admin
                 description:
                     type: string
                     description: Role description
+                    minLength: 3
                     maxLength: 500
                     example: Organization administrator
 
@@ -2209,11 +2218,13 @@ components:
                 name:
                     type: string
                     description: Role name (unique within the organization)
+                    minLength: 3
                     maxLength: 100
                     example: admin
                 description:
                     type: string
                     description: Role description
+                    minLength: 3
                     maxLength: 500
                     example: Organization administrator
 
@@ -2269,14 +2280,17 @@ components:
                     description: Username of the user to add
                     example: janedoe
 
-        # ── Element ─────────────────────────────
-        Element:
+        # ── Scope ───────────────────────────────
+        Scope:
             type: object
-            description: An element within an organization (e.g. a team or project)
+            description: |
+                A scope within an organization (e.g. a class or a team).
+                Scopes are hierarchical: `parentId` references the scope above and is
+                absent on root scopes.
             required:
                 - _id
                 - name
-                - description
+                - type
                 - organizationId
             properties:
                 _id:
@@ -2285,35 +2299,42 @@ components:
                     example: 665b1c2d3e4f5a6b7c8d9e0f
                 name:
                     type: string
-                    description: Unique element name within the organization
-                    example: L1-01
+                    description: Unique scope name within the organization
+                    example: gii-is-g1
                 description:
                     type: string
-                    example: Equipo L1-01 de PSG2
+                    example: Repositorio del grupo 1 de la asignatura
+                type:
+                    type: string
+                    description: Scope type within the organization hierarchy
+                    example: Repositories
                 organizationId:
                     type: string
                     description: Organization ObjectId reference
                     example: 665a1b2c3d4e5f6a7b8c9d0e
+                parentId:
+                    type: string
+                    description: Parent scope ObjectId reference. Absent on root scopes.
+                    example: 665a2b3c4d5e6f7a8b9c0d1e
                 fields:
                     type: array
-                    description: Element fields (must match organization's elementFields)
+                    description: Scope field values (their names must match the organization's scopeFields)
                     items:
                         type: object
                     example: []
                 permissions:
                     type: object
-                    description: Role-based permissions for this element (arrays of role ObjectIds)
-                auditConfig:
+                    description: Role-based permissions for this scope (arrays of role ObjectIds)
+                config:
                     type: object
-                    description: Audit configuration for this element
+                    description: Configuration for this scope
                     example:
-                        owner: universidad-sevilla
-                        repository: L1-01-project
-                parts:
+                        repository: psg2-2425-g1
+                children:
                     type: array
-                    description: Sub-parts of this element, each with its own auditConfig
+                    description: Descendant scopes. Only present when the scopes are returned as a tree.
                     items:
-                        $ref: '#/components/schemas/ElementPart'
+                        $ref: '#/components/schemas/Scope'
                 createdAt:
                     type: string
                     format: date-time
@@ -2324,43 +2345,35 @@ components:
                     type: integer
                     example: 0
 
-        ElementPart:
+        ScopeInput:
             type: object
-            description: A sub-part within an element
-            required:
-                - _id
-                - auditConfig
-            properties:
-                _id:
-                    type: string
-                    description: MongoDB internal identifier (ObjectId)
-                    example: 665c2d3e4f5a6b7c8d9e0f1a
-                auditConfig:
-                    type: object
-                    description: Audit configuration for this part
-                    example:
-                        owner: universidad-sevilla
-                        repository: L1-01-project
-
-        ElementInput:
-            type: object
-            description: Payload for creating or updating an element
+            description: Payload for creating or updating a scope
             required:
                 - name
-                - description
+                - type
                 - fields
                 - permissions
-                - auditConfig
-                - parts
+                - config
             properties:
                 name:
                     type: string
+                    minLength: 2
                     maxLength: 100
-                    example: L1-01
+                    example: gii-is-g1
                 description:
                     type: string
+                    minLength: 3
                     maxLength: 500
-                    example: Equipo L1-01 de PSG2
+                    example: Repositorio del grupo 1 de la asignatura
+                type:
+                    type: string
+                    example: Repositories
+                parentId:
+                    type: string
+                    description: |
+                        Parent scope ObjectId. Only used on creation and must reference an
+                        existing scope of the same organization. Leave it out to create a root scope.
+                    example: 665a2b3c4d5e6f7a8b9c0d1e
                 fields:
                     type: array
                     items:
@@ -2373,34 +2386,46 @@ components:
                         edit: []
                         delete: []
                         create: []
-                auditConfig:
+                config:
                     type: object
                     example:
-                        owner: universidad-sevilla
-                        repository: L1-01-project
-                parts:
-                    type: array
-                    items:
-                        type: object
-                        required:
-                            - auditConfig
-                        properties:
-                            auditConfig:
-                                type: object
-                    example: []
+                        repository: psg2-2425-g1
 
-        ElementPartInput:
+        ScopeNodeInput:
             type: object
-            description: Payload for creating or updating an element part
+            description: |
+                A scope inside a tree payload. The position in the hierarchy is expressed
+                through `children` instead of `parentId`, which must not be sent.
+                `fields` and `permissions` are not accepted here: they are handled from the
+                individual scope endpoints and are initialized empty.
             required:
-                - auditConfig
+                - name
+                - type
+                - config
+                - children
             properties:
-                auditConfig:
+                name:
+                    type: string
+                    minLength: 2
+                    maxLength: 100
+                    example: gii-is-g1
+                description:
+                    type: string
+                    minLength: 3
+                    maxLength: 500
+                    example: Repositorio del grupo 1 de la asignatura
+                type:
+                    type: string
+                    example: Repositories
+                config:
                     type: object
-                    description: Audit configuration for this part
                     example:
-                        owner: universidad-sevilla
-                        repository: L1-01-project
+                        repository: psg2-2425-g1
+                children:
+                    type: array
+                    description: Descendant scopes. Empty array on a leaf scope.
+                    items:
+                        $ref: '#/components/schemas/ScopeNodeInput'
 
         # ── Base field properties (shared) ──────
         FieldBase:
@@ -2413,10 +2438,12 @@ components:
                 name:
                     type: string
                     description: Field name (unique within its array)
+                    minLength: 3
                     maxLength: 100
                 description:
                     type: string
                     description: Field description
+                    minLength: 3
                     maxLength: 500
                 type:
                     type: string
@@ -2426,14 +2453,14 @@ components:
                         - enum
                         - number
 
-        # ── ElementField ─────────────────────────
-        ElementField:
+        # ── ScopeField ───────────────────────────
+        ScopeField:
             description: |
-                Field that defines part of the structure of an organization's elements.
+                Field that defines part of the structure of an organization's scopes.
                 If `type` is `enum`, `value` contains the array of allowed values.
                 For any other type, `value` is not present.
             oneOf:
-                - title: Enum element field
+                - title: Enum scope field
                   allOf:
                       - $ref: '#/components/schemas/FieldBase'
                       - type: object
@@ -2457,21 +2484,21 @@ components:
                           - PSG1
                           - PSG2
                           - PSG3
-                - title: Non-enum element field
+                - title: Non-enum scope field
                   allOf:
                       - $ref: '#/components/schemas/FieldBase'
                   example:
                       name: title
-                      description: Element title
+                      description: Scope title
                       type: string
 
-        ElementFieldInput:
+        ScopeFieldInput:
             description: |
-                Data to create or update an element field.
+                Data to create or update a scope field.
                 If `type` is `enum`, `value` is required and must be an array.
                 For any other type, `value` must not be sent.
             oneOf:
-                - title: Enum element field
+                - title: Enum scope field
                   allOf:
                       - $ref: '#/components/schemas/FieldBase'
                       - type: object
@@ -2495,12 +2522,12 @@ components:
                           - PSG1
                           - PSG2
                           - PSG3
-                - title: Non-enum element field
+                - title: Non-enum scope field
                   allOf:
                       - $ref: '#/components/schemas/FieldBase'
                   example:
                       name: title
-                      description: Element title
+                      description: Scope title
                       type: string
         # ── AgreementField ──────────────────────
         AgreementField:
@@ -2578,120 +2605,3 @@ components:
                       name: minResponseTime
                       description: Minimum response time in hours
                       type: number
-
-        # ── User ─────────────────────
-        User:
-            type: object
-            description: Represents a user in the system
-            required:
-                - _id
-                - username
-                - email
-                - name
-                - surname
-                - systemRole
-            properties:
-                _id:
-                    type: string
-                    description: MongoDB ObjectId
-                    example: 665d4e5f6a7b8c9d0e1f2a3b
-                username:
-                    type: string
-                    description: Unique username (3-50 characters)
-                    minLength: 3
-                    maxLength: 50
-                    example: johndoe
-                email:
-                    type: string
-                    format: email
-                    description: User email address
-                    example: john@example.com
-                name:
-                    type: string
-                    description: User's first name (2-30 characters)
-                    minLength: 2
-                    maxLength: 30
-                    example: John
-                surname:
-                    type: string
-                    description: User's last name (2-50 characters)
-                    minLength: 2
-                    maxLength: 50
-                    example: Doe
-                systemRole:
-                    type: string
-                    description: System-level role
-                    enum: [ADMIN, USER]
-                    example: ADMIN
-                createdAt:
-                    type: string
-                    format: date-time
-                    example: '2025-06-01T12:00:00.000Z'
-                updatedAt:
-                    type: string
-                    format: date-time
-                    example: '2025-06-01T12:00:00.000Z'
-
-        UserInput:
-            type: object
-            description: Request payload for creating or updating a user
-            required:
-                - username
-                - email
-                - password
-                - name
-                - surname
-                - systemRole
-            properties:
-                username:
-                    type: string
-                    description: Unique username (3-50 characters)
-                    minLength: 3
-                    maxLength: 50
-                    example: johndoe
-                email:
-                    type: string
-                    format: email
-                    description: Valid email address
-                    example: john@example.com
-                password:
-                    type: string
-                    description: Password (minimum 6 characters)
-                    minLength: 6
-                    example: securePassword123
-                name:
-                    type: string
-                    description: User's first name (2-30 characters)
-                    minLength: 2
-                    maxLength: 30
-                    example: John
-                surname:
-                    type: string
-                    description: User's last name (2-50 characters)
-                    minLength: 2
-                    maxLength: 50
-                    example: Doe
-                systemRole:
-                    type: string
-                    description: System-level role
-                    enum: [ADMIN, USER]
-                    example: USER
-
-        LoginInput:
-            type: object
-            description: Request payload for user login
-            required:
-                - login
-                - password
-            properties:
-                login:
-                    type: string
-                    description: Login identifier - can be username or email (3-100 characters)
-                    minLength: 3
-                    maxLength: 100
-                    example: johndoe
-                password:
-                    type: string
-                    description: User password (minimum 6 characters)
-                    minLength: 6
-                    example: securePassword123

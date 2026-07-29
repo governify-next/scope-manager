@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
+import type { IField, IRole } from '../types/organization.types.js';
 
 // Subdocumentos
 
@@ -44,23 +45,10 @@ export interface IOrganization extends Document {
     name: string;
     displayName: string;
     description: string;
-    elementFields: {
-        name: string;
-        description: string;
-        type: string;
-        value?: unknown;
-    }[];
-    agreementFields: {
-        name: string;
-        description: string;
-        type: string;
-        value?: unknown;
-    }[];
-    roles: {
-        _id?: Types.ObjectId;
-        name: string;
-        description: string;
-    }[];
+    createdBy: Types.ObjectId;
+    scopeFields: IField[];
+    agreementFields: IField[];
+    roles: IRole[];
 }
 
 // Esquema principal
@@ -70,7 +58,8 @@ const organizationSchema = new Schema<IOrganization>(
         name: { type: String, required: true, unique: true },
         displayName: { type: String, default: '' },
         description: { type: String, required: true },
-        elementFields: { type: [fieldSchema], default: [] },
+        createdBy: { type: Schema.Types.ObjectId, required: true },
+        scopeFields: { type: [fieldSchema], default: [] },
         agreementFields: { type: [fieldSchema], default: [] },
         roles: {
             type: [roleSchema],
