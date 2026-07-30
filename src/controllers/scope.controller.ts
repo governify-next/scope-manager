@@ -35,7 +35,8 @@ export const createScopes = async (req: Request, res: Response, next: NextFuncti
 export const getScopesByOrganization = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const organization = await organizationService.getOrganizationByName(req.params.orgName);
-        const scopes = await scopeService.getScopesByOrganization(organization!._id);
+        const flat = req.query.flat === 'true';
+        const scopes = await scopeService.getScopesByOrganization(organization!._id, flat);
         return sendSuccess(res, { data: scopes });
     } catch (err) {
         next(err);

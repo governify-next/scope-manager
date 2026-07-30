@@ -15,15 +15,15 @@ export const createScopes = async (organizationId: Types.ObjectId, roots: IScope
     return await scopeRepository.createScopes(scopes);
 };
 
-export const getScopesByOrganization = async (organizationId: Types.ObjectId) => {
+export const getScopesByOrganization = async (organizationId: Types.ObjectId, flat = false) => {
     // 1. Get scopes from organization
     const scopes = await scopeRepository.getScopesByOrganizationId(organizationId);
 
-    // 2. Build scopes tree
-    const scopesTree = buildScopesTree(scopes);
+    // 2. Return them flat if requested
+    if (flat) return scopes;
 
-    // 3. Return scopes tree
-    return scopesTree;
+    // 3. Otherwise, Build and return scopes tree
+    return buildScopesTree(scopes);
 };
 
 export const getScopeById = async (organizationId: Types.ObjectId, scopeId: Types.ObjectId) => {

@@ -51,9 +51,9 @@ organizationRoutes.post(
 );
 organizationRoutes.get(
     '/organizations/:orgName',
-    checkUserAuthentication,
+    // checkUserAuthentication,
     existingOrganization,
-    anyOf(hasOrgMembership, hasSystemRole(SystemRole.ADMIN)),
+    // anyOf(hasOrgMembership, hasSystemRole(SystemRole.ADMIN)),
     organizationController.getOrganizationByName,
 );
 organizationRoutes.put(
