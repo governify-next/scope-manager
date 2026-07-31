@@ -26,7 +26,10 @@ export const getScopesByOrganization = async (organizationId: Types.ObjectId, fl
     return buildScopesTree(scopes);
 };
 
-export const getScopeById = async (organizationId: Types.ObjectId, scopeId: Types.ObjectId) => {
+export const getScopeById = async (
+    organizationId: Types.ObjectId,
+    scopeId: string | Types.ObjectId,
+) => {
     const scope = await scopeRepository.getScopeById(organizationId, scopeId);
     if (!scope) {
         throw new NotFoundError(`Scope with id '${scopeId}' not found in organization`);
@@ -37,7 +40,7 @@ export const getScopeById = async (organizationId: Types.ObjectId, scopeId: Type
 
 export const updateScope = async (
     organizationId: Types.ObjectId,
-    scopeId: Types.ObjectId,
+    scopeId: string | Types.ObjectId,
     data: Partial<IScope>,
 ) => {
     const { name, description, type, parentId, fields, permissions, config } = data;
@@ -55,7 +58,7 @@ export const updateScope = async (
 
 export const deleteScopesByParent = async (
     organizationId: Types.ObjectId,
-    scopeId: Types.ObjectId,
+    scopeId: string | Types.ObjectId,
 ) => {
     await getScopeById(organizationId, scopeId);
     const scopeIds = await collectDescendantIds(organizationId, scopeId);
@@ -65,7 +68,7 @@ export const deleteScopesByParent = async (
 
 export const addRoleToScopePermission = async (
     organizationId: Types.ObjectId,
-    scopeId: Types.ObjectId,
+    scopeId: string | Types.ObjectId,
     permissionName: string,
     roleNames: string[],
 ) => {
@@ -98,7 +101,10 @@ export const addRoleToScopePermission = async (
 // Logic internal methods
 
 // Devuelve el scope y todos sus descendientes, recorriendo el árbol nivel a nivel.
-const collectDescendantIds = async (organizationId: Types.ObjectId, scopeId: Types.ObjectId) => {
+const collectDescendantIds = async (
+    organizationId: Types.ObjectId,
+    scopeId: string | Types.ObjectId,
+) => {
     const scopeIds = [scopeId];
     let parentIds = [scopeId];
 

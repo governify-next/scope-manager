@@ -2,7 +2,6 @@ import { Router } from 'express';
 import * as scopeController from '../controllers/scope.controller.js';
 import {
     existingScope,
-    validScopeId,
     validateScope,
     validateScopePermissionRoles,
 } from '../middlewares/scope.validator.js';
@@ -29,13 +28,11 @@ scopeRoutes.get(
 scopeRoutes.get(
     '/organizations/:orgName/scopes/:scopeId',
     existingOrganization,
-    validScopeId,
     scopeController.getScopeById,
 );
 scopeRoutes.put(
     '/organizations/:orgName/scopes/:scopeId',
     existingOrganization,
-    validScopeId,
     existingScope(),
     validateScope,
     scopeController.updateScope,
@@ -43,7 +40,6 @@ scopeRoutes.put(
 scopeRoutes.delete(
     '/organizations/:orgName/scopes/:scopeId',
     existingOrganization,
-    validScopeId,
     existingScope(),
     scopeController.deleteScopesByParent,
 );
@@ -51,7 +47,6 @@ scopeRoutes.delete(
 scopeRoutes.post(
     '/organizations/:orgName/scopes/:scopeId/permissions/:permissionName',
     existingOrganization,
-    validScopeId,
     validateScopePermissionRoles,
     scopeController.addRoleToScopePermission,
 );
