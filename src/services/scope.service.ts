@@ -100,7 +100,7 @@ export const addRoleToScopePermission = async (
 
 // Logic internal methods
 
-// Devuelve el scope y todos sus descendientes, recorriendo el árbol nivel a nivel.
+// Returns the scope and all its descendants, walking the tree level by level.
 const collectDescendantIds = async (
     organizationId: Types.ObjectId,
     scopeId: string | Types.ObjectId,
