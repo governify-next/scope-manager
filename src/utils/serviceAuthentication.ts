@@ -1,16 +1,12 @@
-import jwt from 'jsonwebtoken';
 import { bootEnv } from '../config/bootConfig.js';
 
 const AUTHENTICATOR_SERVICE_URL = bootEnv.AUTHENTICATOR_SERVICE_URL;
 const CLIENT_ID = bootEnv.CLIENT_ID;
 const CLIENT_SECRET = bootEnv.CLIENT_SECRET;
 
-// Renew before the actual expiration so a token cannot expire mid-request
-const RENEWAL_MARGIN_MS = 30_000;
+let serviceToken: string | null = null;
 
-let cachedToken: { value: string; expiresAt: number } | null = null;
-
-const fetchServiceToken = async () => {
+export const fetchServiceToken = async () => {
     const response = await fetch(`${AUTHENTICATOR_SERVICE_URL}/api/v1/services/token`, {
         method: 'POST',
         headers: {
@@ -30,17 +26,15 @@ const fetchServiceToken = async () => {
         );
 
     const token: string = result.data.token;
-    const { exp } = jwt.decode(token) as { exp: number };
 
-    return { value: token, expiresAt: exp * 1000 };
+    serviceToken = token;
+
+    return token;
 };
 
-export const getServiceHeaders = async () => {
-    if (!cachedToken || Date.now() >= cachedToken.expiresAt - RENEWAL_MARGIN_MS)
-        cachedToken = await fetchServiceToken();
-
+export const getServiceHeaders = () => {
     return {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${cachedToken.value}`,
+        Authorization: `Bearer ${serviceToken}`,
     };
 };
