@@ -72,7 +72,7 @@ export const getOrganizationById = async (organizationId: Types.ObjectId) => {
     return await Organization.findById(organizationId);
 };
 
-// Para trabajo interno en la organización
+// For internal work within the organization
 export const getOrganizationByName = async (orgName: string) => {
     return await Organization.findOne({ name: orgName });
 };
@@ -114,7 +114,7 @@ export const updateRole = async (orgName: string, oldRoleName: string, data: IRo
         { name: orgName, 'roles.name': oldRoleName },
         {
             $set: {
-                'roles.$.name': data.name, // $ nos dice el elemento del array que ha hecho "match" a lo puesto arriba
+                'roles.$.name': data.name,
                 'roles.$.description': data.description,
             },
         },
@@ -130,7 +130,7 @@ export const deleteRole = async (orgName: string, roleName: string) => {
     );
 };
 
-// Fields genéricos para que scopeFields y agreementFields compartan la misma lógica
+// Generic fields so that scopeFields and agreementFields share the same logic
 
 export const addField = async (orgName: string, arrayName: FieldArrayName, field: IField) => {
     return await Organization.findOneAndUpdate(
@@ -151,7 +151,7 @@ export const updateField = async (
         [`${arrayName}.$[fieldElem].description`]: data.description,
         [`${arrayName}.$[fieldElem].type`]: data.type,
     };
-    // Solo se actualiza value si fue enviado en el body
+    // value is only updated if it was sent in the body
     if ('value' in data) setClause[`${arrayName}.$[fieldElem].value`] = data.value;
 
     return await Organization.findOneAndUpdate(

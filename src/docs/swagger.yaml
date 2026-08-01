@@ -925,6 +925,16 @@ paths:
                 Root scopes are returned at the first level and every scope nests its
                 descendants inside its `children` array.
                 The organization must exist.
+                When `flat=true` the response is a flat array of scopes and no `children`
+                field is built.
+            parameters:
+                - name: flat
+                  in: query
+                  required: false
+                  schema:
+                      type: boolean
+                      default: false
+                  description: If `true`, returns a flat array of scopes instead of the nested tree.
             responses:
                 '200':
                     description: List of scopes retrieved successfully

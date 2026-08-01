@@ -116,13 +116,6 @@ const validateScopePermissions = async (req: Request, res: Response, next: NextF
     }
 };
 
-export const validScopeId = (req: Request, res: Response, next: NextFunction) => {
-    if (!Types.ObjectId.isValid(req.params.scopeId)) {
-        return next(new ValidationError(`Scope id '${req.params.scopeId}' is not a valid id`));
-    }
-    next();
-};
-
 export const existingScope = (checkParent = false) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -133,10 +126,7 @@ export const existingScope = (checkParent = false) => {
                 if (!parentId) return next(); // is a root scope, no need validation
                 scope = await scopeService.getScopeById(organization._id, parentId);
             } else {
-                scope = await scopeService.getScopeById(
-                    organization._id,
-                    new Types.ObjectId(req.params.scopeId),
-                );
+                scope = await scopeService.getScopeById(organization._id, req.params.scopeId);
             }
             if (!scope) {
                 return next(

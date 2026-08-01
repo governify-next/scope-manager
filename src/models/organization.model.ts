@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 import type { IField, IRole } from '../types/organization.types.js';
 
-// Subdocumentos
+// Subdocuments
 
 const fieldSchema = new Schema(
     {
@@ -9,12 +9,12 @@ const fieldSchema = new Schema(
         description: { type: String, required: true },
         type: { type: String, required: true, enum: ['string', 'enum', 'number'] },
         value: {
-            type: Schema.Types.Mixed, // acepta cualquier valor
+            type: Schema.Types.Mixed, // accepts any value
             required: function () {
                 return this.type === 'enum';
             },
             validate: {
-                // 2a puerta de seguridad para value
+                // 2nd safety gate for value
                 validator: function (value: unknown) {
                     if (this.type === 'enum') {
                         if (value === undefined || !Array.isArray(value)) {
@@ -39,7 +39,7 @@ const roleSchema = new Schema({
     description: { type: String, required: true },
 });
 
-// Interfaz para TypeScript
+// TypeScript Interface
 
 export interface IOrganization extends Document {
     name: string;
@@ -51,7 +51,7 @@ export interface IOrganization extends Document {
     roles: IRole[];
 }
 
-// Esquema principal
+// Main Schema
 
 const organizationSchema = new Schema<IOrganization>(
     {
@@ -67,7 +67,7 @@ const organizationSchema = new Schema<IOrganization>(
         },
     },
     {
-        timestamps: true, // createdAt y updatedAt
+        timestamps: true, // createdAt and updatedAt
     },
 );
 

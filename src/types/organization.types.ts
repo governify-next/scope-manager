@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 
-// Para distinguir entre scopeFields y agreementFields
+// To tell scopeFields and agreementFields apart
 export type FieldArrayName = 'scopeFields' | 'agreementFields';
 
 export type OrganizationSearchFilters = {

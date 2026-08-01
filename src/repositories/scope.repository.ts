@@ -14,13 +14,16 @@ export const getScopesByOrganizationId = async (organizationId: Types.ObjectId) 
     return await Scope.find({ organizationId }).lean();
 };
 
-export const getScopeById = async (organizationId: Types.ObjectId, scopeId: Types.ObjectId) => {
+export const getScopeById = async (
+    organizationId: Types.ObjectId,
+    scopeId: string | Types.ObjectId,
+) => {
     return await Scope.findOne({ organizationId, _id: scopeId });
 };
 
 export const updateScope = async (
     organizationId: Types.ObjectId,
-    scopeId: Types.ObjectId,
+    scopeId: string | Types.ObjectId,
     data: Partial<IScope>,
 ) => {
     return await Scope.findOneAndUpdate({ organizationId, _id: scopeId }, data, {
@@ -28,13 +31,16 @@ export const updateScope = async (
     });
 };
 
-export const deleteScopes = async (organizationId: Types.ObjectId, scopeIds: Types.ObjectId[]) => {
+export const deleteScopes = async (
+    organizationId: Types.ObjectId,
+    scopeIds: (string | Types.ObjectId)[],
+) => {
     return await Scope.deleteMany({ organizationId, _id: { $in: scopeIds } });
 };
 
 export const addRoleToScopePermission = async (
     organizationId: Types.ObjectId,
-    scopeId: Types.ObjectId,
+    scopeId: string | Types.ObjectId,
     permissionName: string,
     roleIds: Types.ObjectId[],
 ) => {
@@ -64,7 +70,7 @@ export const createScopes = async (scopes: Partial<IScope>[]) => {
 
 export const getScopesByParentIds = async (
     organizationId: Types.ObjectId,
-    parentIds: Types.ObjectId[],
+    parentIds: (string | Types.ObjectId)[],
 ) => {
     return await Scope.find({ organizationId, parentId: { $in: parentIds } })
         .select('_id')

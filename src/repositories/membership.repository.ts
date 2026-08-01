@@ -2,16 +2,16 @@ import { Types } from 'mongoose';
 import Membership from '../models/membership.model.js';
 import type { ExpandMode } from '../types/membership.types.js';
 
-// Método interno para el borrado en cascada de un rol
+// Internal method for the cascade deletion of a role
 export const removeRoleFromMemberships = async (roleId: Types.ObjectId) => {
-    // bulk da rendimiento (ejecuta las dos operaciones como un paquete) y seguridad (no hay estado intermedio)
+    // bulk gives performance (runs both operations as one batch) and safety (no intermediate state)
     return await Membership.bulkWrite([
         {
-            // Borramos el roleId de los arrays de rolesId en los que aparezca
+            // Remove the roleId from every rolesId array where it appears
             updateMany: { filter: { rolesId: roleId }, update: { $pull: { rolesId: roleId } } },
         },
         {
-            // Si un array de rolesId queda huérfano (vacío), lo eliminamos
+            // If a rolesId array is left orphan (empty), delete it
             deleteMany: { filter: { rolesId: { $size: 0 } } },
         },
     ]);
@@ -42,10 +42,10 @@ export const assignRole = async (
     orgId: Types.ObjectId,
     roleId: Types.ObjectId,
 ) => {
-    // Usamos upsert, si no existe la membership la crea, si existe añade el rol
+    // Use upsert: it creates the membership if it does not exist, and adds the role if it does
     return await Membership.findOneAndUpdate(
         { organizationId: orgId, userId: userId },
-        { $addToSet: { rolesId: roleId } }, // addToSet previene duplicados e inicializa el array si es necesario
+        { $addToSet: { rolesId: roleId } }, // addToSet prevents duplicates and initializes the array if needed
         { upsert: true, new: true },
     );
 };

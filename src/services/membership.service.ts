@@ -3,7 +3,7 @@ import * as membershipRepository from '../repositories/membership.repository.js'
 import type { ExpandMode } from '../types/membership.types.js';
 
 export const removeRoleFromMemberships = async (roleId: Types.ObjectId) => {
-    // Existencia de id ya viene validada, solo hay que borrar
+    // The id existence is already validated, we only need to delete
     return await membershipRepository.removeRoleFromMemberships(roleId);
 };
 
@@ -20,7 +20,7 @@ export const assignRole = async (
     orgId: Types.ObjectId,
     roleId: Types.ObjectId,
 ) => {
-    // Id viene del token de la req, no es necesario validar
+    // The id comes from the req token, no validation needed
     return await membershipRepository.assignRole(userId, orgId, roleId);
 };
 

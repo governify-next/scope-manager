@@ -29,7 +29,7 @@ import { anyOf } from '../middlewares/anyof.validator.js';
 
 export const organizationRoutes = Router();
 
-// Organización
+// Organization
 organizationRoutes.post(
     '/organizations',
     checkUserAuthentication,

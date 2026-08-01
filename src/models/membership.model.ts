@@ -18,13 +18,13 @@ const membershipSchema = new Schema<IMembership>(
     { timestamps: true },
 );
 
-// Índice de unicidad
+// Uniqueness index
 membershipSchema.index({ organizationId: 1, userId: 1 }, { unique: true });
 
-// Índice para saber que usuarios tienen x roles en una org
+// Index to know which users have which roles in an org
 membershipSchema.index({ organizationId: 1, rolesId: 1 });
 
-// Índice para encontrar las organizaciones a las que pertenece un usuario
+// Index to find the organizations a user belongs to
 membershipSchema.index({ userId: 1 });
 
 const Membership = mongoose.model<IMembership>('Membership', membershipSchema);

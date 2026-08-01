@@ -53,15 +53,15 @@ const typeValidation = (field: string) =>
         .withMessage(`${field} must be one of: string, enum, number`);
 
 const valueValidation = (field: string) => {
-    // Extraemos el valor de field 'value'
+    // Extract the value of the 'value' field
     return body(field).custom((value, meta) => {
-        // Si type es enum
+        // If type is enum
         if (meta.req.body.type === 'enum') {
-            // Debe existir value
+            // value must exist
             if (value === undefined) {
                 throw new Error("The 'value' field should be defined if 'type' is 'enum'");
             }
-            // Debe ser Array
+            // It must be an Array
             if (!Array.isArray(value)) {
                 throw new Error("The 'value' field must be defined as a list if 'type' is 'enum'");
             }
@@ -233,7 +233,7 @@ export const existingField = (arrayName: FieldArrayName) => {
 export const uniqueRole = async (req: Request, res: Response, next: NextFunction) => {
     const { roleName } = req.params;
     const newName = req.body.name;
-    // Si es update y el nombre no cambió, no hay conflicto
+    // On update, if the name did not change there is no conflict
     if (roleName && newName === roleName) return next();
 
     try {
@@ -271,7 +271,7 @@ export const uniqueField = (arrayName: FieldArrayName) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         const { fieldName } = req.params;
         const newName = req.body.name;
-        // Si es update y el nombre no cambió, no hay conflicto
+        // On update, if the name did not change there is no conflict
         if (fieldName && newName === fieldName) return next();
 
         try {
@@ -303,7 +303,7 @@ export const hasOrgRole = (roleName: string) => {
                     ),
                 );
 
-            // Buscamos si el usuario tiene ese rol en la organización
+            // Look up whether the user has that role in the organization
             const hasRole = await findEspecificRole(
                 organization._id,
                 new Types.ObjectId(req.userAuth!.userId),

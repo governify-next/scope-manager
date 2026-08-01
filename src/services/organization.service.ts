@@ -15,7 +15,7 @@ import { createPagination } from '../utils/pagination.js';
 import { SystemRole } from '../types/systemRole.js';
 import { ForbiddenError } from '../utils/customErrors.js';
 
-// Para trabajo interno en la organización
+// For internal work within the organization
 export const getOrganizationByName = async (orgName: string) => {
     return await organizationRepository.getOrganizationByName(orgName);
 };
@@ -110,15 +110,15 @@ export const updateOrganization = async (orgName: string, data: Partial<IOrganiz
 export const deleteOrganization = async (orgName: string) => {
     const organization = await getOrganizationByName(orgName);
     const orgId = organization!._id;
-    // Borramos las memberships asociadas
+    // Delete the associated memberships
     await membershipService.removeMembershipsByOrganization(orgId);
 
-    // TODO: borrado en cascada de agreement templates
+    // TODO: cascade deletion of agreement templates
 
-    // Borramos los scopes asociados
+    // Delete the associated scopes
     const scopes = await scopeService.getScopesByOrganization(orgId);
     await Promise.all(scopes.map((scope) => scopeService.deleteScopesByParent(orgId, scope._id)));
-    // Borramos la organización
+    // Delete the organization
     return await organizationRepository.deleteOrganization(orgName);
 };
 
@@ -132,11 +132,11 @@ export const updateRole = async (orgName: string, roleName: string, data: IRole)
 
 export const deleteRole = async (orgName: string, roleName: string) => {
     const org = await getOrganizationByName(orgName);
-    // Como obtenemos la org, pasamos ya el id del rol para el borrado en Membership
+    // Since we already fetch the org, pass the role id straight to the Membership deletion
     const roleToDelete = org!.roles.find((r) => r.name === roleName);
-    // Llamamos a Membership para que borre el rol de las asignaciones
-    await membershipService.removeRoleFromMemberships(roleToDelete!._id!); // ! garantiza a Ts no nulo ahora que tenemos id? en interfaz
-    // Borramos el rol de la organización
+    // Ask Membership to remove the role from the assignments
+    await membershipService.removeRoleFromMemberships(roleToDelete!._id!); // ! tells Ts it is not null, now that the interface declares id?
+    // Delete the role from the organization
     return await organizationRepository.deleteRole(orgName, roleName);
 };
 
