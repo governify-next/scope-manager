@@ -44,6 +44,7 @@ paths:
             tags:
                 - Health
             summary: Health check
+            operationId: healthCheck
             description: Returns the server health status. This endpoint does not use the standard response wrapper.
             responses:
                 '200':
@@ -52,9 +53,16 @@ paths:
                         application/json:
                             schema:
                                 type: object
+                                required:
+                                    - status
+                                    - message
                                 properties:
                                     status:
                                         type: string
+                                        example: ok
+                                    message:
+                                        type: string
+                                        example: Health check passed
 
     # ──────────────────────────────────────────────
     # Organizations
@@ -69,7 +77,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Returns a paginated array with organizations registered in the system.
-                Requires an authenticated user with system ADMIN role.
+                Requires an authenticated user with system SUPERADMIN role.
                 Each organization includes its roles, scope fields, agreement fields and members count.
             parameters:
                 - $ref: '#/components/parameters/paginationPage'
@@ -114,6 +122,8 @@ paths:
                     $ref: '#/components/responses/ValidationError'
                 '401':
                     $ref: '#/components/responses/Unauthorized'
+                '403':
+                    $ref: '#/components/responses/Forbidden'
                 '500':
                     $ref: '#/components/responses/InternalError'
         post:
@@ -125,7 +135,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Creates a new organization with a unique name, optional displayName and description.
-                Requires an authenticated user with system ADMIN role.
+                Requires an authenticated user with system ADMIN or SUPERADMIN role.
                 The organization is created with a default 'admin' role, stores the creator id
                 and automatically assigns the creator as organization admin.
                 The scopeFields and agreementFields arrays are initialized empty.
@@ -182,8 +192,9 @@ paths:
                 Searches organizations using optional text filters and pagination.
                 Requires an authenticated user.
                 Filters can target name, displayName or both.
-                Users with system ADMIN role search across all organizations.
-                Non-admin users only search organizations where they are members.
+                Users with system SUPERADMIN role search across all organizations.
+                Users without the SUPERADMIN role, including system ADMIN users, only search
+                organizations where they are members.
                 Each organization includes its members count.
             parameters:
                 - $ref: '#/components/parameters/paginationPage'
@@ -247,7 +258,7 @@ paths:
                 Returns the full organization identified by its unique name,
                 including its roles, scope fields, agreement fields and members count.
                 Requires an authenticated user that is either a member of the organization
-                or has system ADMIN role.
+                or has system SUPERADMIN role.
             responses:
                 '200':
                     description: Organization found
@@ -279,6 +290,8 @@ paths:
                                 error: null
                 '401':
                     $ref: '#/components/responses/Unauthorized'
+                '403':
+                    $ref: '#/components/responses/Forbidden'
                 '404':
                     $ref: '#/components/responses/OrganizationNotFound'
                 '500':
@@ -292,7 +305,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Updates the name, displayName and description of an existing organization.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 If the name is changed, the new name must be unique in the system.
                 The request body is validated with the same required fields as creation.
             requestBody:
@@ -325,7 +338,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Permanently deletes the organization and all its associated data.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 Memberships and scopes belonging to the organization are removed before the organization.
             responses:
                 '200':
@@ -365,7 +378,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Adds a new role to the specified organization.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The role body must include name and description.
                 The role name must be unique within the organization.
                 There is a maximum role limit per organization (default 100).
@@ -404,7 +417,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Updates the name and/or description of an existing role.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The built-in 'admin' role cannot be modified.
                 If the name is changed, the new name must be unique within the organization.
                 The role body must include name and description.
@@ -438,7 +451,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Removes a role from the organization.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The built-in 'admin' role cannot be deleted.
                 This operation also removes the role from associated memberships and deletes
                 memberships that are left without roles.
@@ -473,7 +486,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Adds a new field to the organization's scope definition.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The field body must include name, description and type.
                 Type must be one of `string`, `enum` or `number`.
                 If type is `enum`, value must be an array; otherwise value must not be sent.
@@ -514,7 +527,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Updates an existing scope field.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The existing field must belong to the organization's scopeFields.
                 The field body must include name, description and type.
                 Type must be one of `string`, `enum` or `number`.
@@ -551,7 +564,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Removes a field from the organization's scope definition.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The field must exist in the organization's scopeFields.
             responses:
                 '200':
@@ -584,7 +597,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Adds a new field to the organization's agreement definition.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The field body must include name, description and type.
                 Type must be one of `string`, `enum` or `number`.
                 If type is `enum`, value must be an array; otherwise value must not be sent.
@@ -625,7 +638,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Updates an existing agreement field.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The existing field must belong to the organization's agreementFields.
                 The field body must include name, description and type.
                 Type must be one of `string`, `enum` or `number`.
@@ -662,7 +675,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Removes a field from the organization's agreement definition.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The field must exist in the organization's agreementFields.
             responses:
                 '200':
@@ -695,7 +708,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Returns the memberships of the specified organization.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 Use the `expand` query parameter to control the level of detail:
                 - `none` (default): returns raw ObjectIds
 
@@ -718,6 +731,8 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/MembershipsResponse'
+                '400':
+                    $ref: '#/components/responses/ValidationError'
                 '401':
                     $ref: '#/components/responses/Unauthorized'
                 '403':
@@ -735,7 +750,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Adds an existing user as a member of the specified organization.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The user must exist in the system and must not already be a member.
                 There is a maximum member limit per organization (default 1000).
             requestBody:
@@ -786,8 +801,8 @@ paths:
                 - BearerAuth: []
             description: |
                 Returns whether the authenticated user has the `admin` role in the organization.
-                Requires the authenticated user to be a member of the organization or to have system ADMIN role.
-                Users with system ADMIN role always receive `true`.
+                Requires the authenticated user to be a member of the organization or to have system SUPERADMIN role.
+                Users with system SUPERADMIN role always receive `true`.
                 Organization members receive `true` only when their membership includes the organization admin role.
             responses:
                 '200':
@@ -806,6 +821,8 @@ paths:
                                 error: null
                 '401':
                     $ref: '#/components/responses/Unauthorized'
+                '403':
+                    $ref: '#/components/responses/Forbidden'
                 '404':
                     $ref: '#/components/responses/OrganizationNotFound'
                 '500':
@@ -825,7 +842,7 @@ paths:
             description: |
                 Removes a user from the specified organization, deleting
                 the associated membership.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The user must be a current member of the organization.
                 An admin cannot remove themselves from the organization.
                 The organization creator cannot be removed.
@@ -867,7 +884,7 @@ paths:
                 - BearerAuth: []
             description: |
                 Replaces all roles assigned to the member with the selected role names.
-                Requires organization admin role or system ADMIN role.
+                Requires organization admin role or system SUPERADMIN role.
                 The target user must be a current member of the organization.
                 Role names must exist in the organization and cannot be duplicated.
                 Send an empty array to leave a non-creator member without roles.
@@ -995,6 +1012,8 @@ paths:
                                                       username: ana92837
                                                   children: []
                                 error: null
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
                 '404':
                     $ref: '#/components/responses/OrganizationNotFound'
                 '500':
@@ -1049,6 +1068,8 @@ paths:
                                 error: null
                 '400':
                     $ref: '#/components/responses/ValidationError'
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
                 '404':
                     $ref: '#/components/responses/OrganizationNotFound'
                 '500':
@@ -1148,6 +1169,8 @@ paths:
                                 error: null
                 '400':
                     $ref: '#/components/responses/ValidationError'
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
                 '404':
                     $ref: '#/components/responses/OrganizationNotFound'
                 '500':
@@ -1174,6 +1197,10 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ScopeResponse'
+                '400':
+                    $ref: '#/components/responses/ValidationError'
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
                 '404':
                     $ref: '#/components/responses/ScopeNotFound'
                 '500':
@@ -1230,6 +1257,8 @@ paths:
                                 error: null
                 '400':
                     $ref: '#/components/responses/ValidationError'
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
                 '404':
                     $ref: '#/components/responses/ScopeNotFound'
                 '500':
@@ -1259,6 +1288,10 @@ paths:
                                 appCode: SUCCESS
                                 data: null
                                 error: null
+                '400':
+                    $ref: '#/components/responses/ValidationError'
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
                 '404':
                     $ref: '#/components/responses/ScopeNotFound'
                 '500':
@@ -1296,6 +1329,8 @@ paths:
                                 $ref: '#/components/schemas/ScopeResponse'
                 '400':
                     $ref: '#/components/responses/ValidationError'
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
                 '404':
                     $ref: '#/components/responses/ScopeNotFound'
                 '500':
@@ -1997,7 +2032,7 @@ components:
                           properties:
                               isAdmin:
                                   type: boolean
-                                  description: True when the authenticated user is organization admin or system admin
+                                  description: True when the authenticated user is organization admin or system SUPERADMIN
 
         NullResponse:
             allOf:
