@@ -75,7 +75,7 @@ export const searchOrganizations = async (
     userId: string,
 ) => {
     const organizationIds =
-        systemRole === SystemRole.ADMIN
+        systemRole === SystemRole.SUPERADMIN
             ? undefined
             : (await membershipService.findMembershipsByUser(new Types.ObjectId(userId))).map(
                   (membership) => membership.organizationId,
@@ -188,7 +188,7 @@ export const removeUserFromOrganization = async (orgName: string, username: stri
 };
 
 export const isOrganizationAdmin = async (orgName: string, userId: string, systemRole: string) => {
-    if (systemRole === SystemRole.ADMIN) return true;
+    if (systemRole === SystemRole.SUPERADMIN) return true;
 
     const organization = await getOrganizationByName(orgName);
     const adminRole = organization!.roles.find((role) => role.name === 'admin');

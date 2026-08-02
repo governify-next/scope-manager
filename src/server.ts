@@ -2,7 +2,7 @@ import app from './app.js';
 import { getLogger } from './utils/logger.js';
 import { bootEnv } from './config/bootConfig.js';
 import { connectMongo } from './db/mongo.js';
-import { fetchServiceToken, getServiceHeaders } from './utils/serviceAuthentication.js';
+import { fetchServiceToken } from './utils/serviceAuthentication.js';
 
 const logger = getLogger().setTag('server.ts');
 const PORT = bootEnv.PORT;
