@@ -970,6 +970,7 @@ paths:
                                       description: Curso PSG2 año 2024/2025
                                       type: Organizations
                                       organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      createdBy: 665d4e5f6a7b8c9d0e1f2a3b
                                       parentId: null
                                       fields: []
                                       permissions:
@@ -986,6 +987,7 @@ paths:
                                             description: Repositorio del grupo 1 de la asignatura
                                             type: Repositories
                                             organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                            createdBy: 665d4e5f6a7b8c9d0e1f2a3b
                                             parentId: 665a2b3c4d5e6f7a8b9c0d1e
                                             fields: []
                                             permissions:
@@ -1001,6 +1003,7 @@ paths:
                                                   description: miembro del grupo 1
                                                   type: Members
                                                   organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                                  createdBy: 665d4e5f6a7b8c9d0e1f2a3b
                                                   parentId: 665b1c2d3e4f5a6b7c8d9e0f
                                                   fields: []
                                                   permissions:
@@ -1033,6 +1036,8 @@ paths:
                 scope of the same organization; send `null` to create a root scope.
                 Fields must reference existing scope fields defined in the organization.
                 Permission roles must reference existing roles in the organization.
+                `createdBy` is set automatically to the authenticated user's id and must not
+                be sent in the request body.
             requestBody:
                 $ref: '#/components/requestBodies/ScopeBody'
             responses:
@@ -1053,6 +1058,7 @@ paths:
                                     description: Repositorio del grupo 2 de la asignatura
                                     type: Repositories
                                     organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                    createdBy: 665d4e5f6a7b8c9d0e1f2a3b
                                     parentId: 665a2b3c4d5e6f7a8b9c0d1e
                                     fields: []
                                     permissions:
@@ -1094,6 +1100,8 @@ paths:
                 `parentId` must not be sent.
                 `fields` and `permissions` are not accepted here: every scope is created with
                 them empty and they are managed from the individual scope endpoints.
+                Every scope in the tree stores the authenticated user's id in `createdBy`;
+                clients must not send this field.
             requestBody:
                 $ref: '#/components/requestBodies/ScopesTreeBody'
             responses:
@@ -1114,6 +1122,7 @@ paths:
                                       description: Curso PSG2 año 2024/2025
                                       type: Organizations
                                       organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      createdBy: 665d4e5f6a7b8c9d0e1f2a3b
                                       parentId: null
                                       fields: []
                                       permissions:
@@ -1129,6 +1138,7 @@ paths:
                                       description: Repositorio del grupo 1 de la asignatura
                                       type: Repositories
                                       organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      createdBy: 665d4e5f6a7b8c9d0e1f2a3b
                                       parentId: 665a2b3c4d5e6f7a8b9c0d1e
                                       fields: []
                                       permissions:
@@ -1143,6 +1153,7 @@ paths:
                                       description: miembro del grupo 1
                                       type: Members
                                       organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      createdBy: 665d4e5f6a7b8c9d0e1f2a3b
                                       parentId: 665b1c2d3e4f5a6b7c8d9e0f
                                       fields: []
                                       permissions:
@@ -1157,6 +1168,7 @@ paths:
                                       description: miembro del grupo 1
                                       type: Members
                                       organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                      createdBy: 665d4e5f6a7b8c9d0e1f2a3b
                                       parentId: 665b1c2d3e4f5a6b7c8d9e0f
                                       fields: []
                                       permissions:
@@ -1241,6 +1253,7 @@ paths:
                                     description: Curso PSG2 año 2025/2026 (actualizado)
                                     type: Organizations
                                     organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                    createdBy: 665d4e5f6a7b8c9d0e1f2a3b
                                     parentId: null
                                     fields: []
                                     permissions:
@@ -1585,6 +1598,7 @@ components:
                 of the same organization.
                 Each field name must exist in the organization's scopeFields.
                 Each permission value must be an array of role names that exist in the organization.
+                `createdBy` is generated from the authenticated user and must not be sent.
             required: true
             content:
                 application/json:
@@ -1627,6 +1641,7 @@ components:
             description: |
                 New data for the scope, with the same rules as the creation body.
                 Every required field must be sent, even if its value does not change.
+                `createdBy` cannot be changed and must not be sent.
             required: true
             content:
                 application/json:
@@ -1655,6 +1670,8 @@ components:
                 walking the tree.
                 `fields` and `permissions` are not accepted either: every scope is created
                 with them empty and they are managed from the individual scope endpoints.
+                `createdBy` is generated from the authenticated user for every scope in the tree
+                and must not be sent.
             required: true
             content:
                 application/json:
@@ -2361,6 +2378,7 @@ components:
                 - name
                 - type
                 - organizationId
+                - createdBy
                 - parentId
             properties:
                 _id:
@@ -2382,6 +2400,10 @@ components:
                     type: string
                     description: Id of the organization the scope belongs to
                     example: 665a1b2c3d4e5f6a7b8c9d0e
+                createdBy:
+                    type: string
+                    description: Id of the authenticated user that created the scope
+                    example: 665d4e5f6a7b8c9d0e1f2a3b
                 parentId:
                     type: string
                     nullable: true

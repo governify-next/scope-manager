@@ -3,15 +3,23 @@ import * as organizationService from './organization.service.js';
 import { IScope } from '../models/scope.model.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { Types } from 'mongoose';
-import { IScopeNode } from '../types/scope.types.js';
+import { IScopeNode, IScopeNodeInput } from '../types/scope.types.js';
 
-export const createScope = async (organizationId: Types.ObjectId, data: Partial<IScope>) => {
+export const createScope = async (
+    organizationId: Types.ObjectId,
+    createdBy: Types.ObjectId,
+    data: Partial<IScope>,
+) => {
     // TODO: Transform roles of permissions to ids.
-    return await scopeRepository.createScope(organizationId, data);
+    return await scopeRepository.createScope(organizationId, createdBy, data);
 };
 
-export const createScopes = async (organizationId: Types.ObjectId, roots: IScopeNode[]) => {
-    const scopes = createRecursiveTree(organizationId, roots);
+export const createScopes = async (
+    organizationId: Types.ObjectId,
+    createdBy: Types.ObjectId,
+    roots: IScopeNodeInput[],
+) => {
+    const scopes = createRecursiveTree(organizationId, createdBy, roots);
     return await scopeRepository.createScopes(scopes);
 };
 
@@ -119,7 +127,8 @@ const collectDescendantIds = async (
 
 const createRecursiveTree = (
     organizationId: Types.ObjectId,
-    nodes: IScopeNode[],
+    createdBy: Types.ObjectId,
+    nodes: IScopeNodeInput[],
     scopes: Partial<IScope>[] = [],
     parentId: Types.ObjectId | null = null,
 ) => {
@@ -130,9 +139,18 @@ const createRecursiveTree = (
         // 3. Add the node as scope to create.
         //    fields and permissions are only handled from the individual scope endpoints.
         const { name, description, type, config } = node;
-        scopes.push({ name, description, type, config, _id: nodeId, organizationId, parentId });
+        scopes.push({
+            name,
+            description,
+            type,
+            config,
+            _id: nodeId,
+            organizationId,
+            createdBy,
+            parentId,
+        });
         // 4. Pass identifier to children by recursion, if it has children.
-        createRecursiveTree(organizationId, node.children, scopes, nodeId);
+        createRecursiveTree(organizationId, createdBy, node.children, scopes, nodeId);
     }
     return scopes;
 };

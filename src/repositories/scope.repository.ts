@@ -2,10 +2,15 @@ import Scope, { IScope } from '../models/scope.model.js';
 import { Types } from 'mongoose';
 import { NotFoundError } from '../utils/customErrors.js';
 
-export const createScope = async (organizationId: Types.ObjectId, data: Partial<IScope>) => {
+export const createScope = async (
+    organizationId: Types.ObjectId,
+    createdBy: Types.ObjectId,
+    data: Partial<IScope>,
+) => {
     const scope = new Scope({
         ...data,
         organizationId,
+        createdBy,
     });
     return await scope.save();
 };

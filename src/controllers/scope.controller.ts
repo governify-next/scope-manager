@@ -2,11 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import * as scopeService from '../services/scope.service.js';
 import * as organizationService from '../services/organization.service.js';
 import { sendSuccess } from '../utils/standardResponse.js';
+import { Types } from 'mongoose';
 
 export const createScope = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const organization = await organizationService.getOrganizationByName(req.params.orgName);
-        const scope = await scopeService.createScope(organization!._id, req.body);
+        const scope = await scopeService.createScope(
+            organization!._id,
+            new Types.ObjectId(req.userAuth!.userId),
+            req.body,
+        );
         return sendSuccess(res, {
             data: scope,
             httpStatus: 201,
@@ -20,7 +25,11 @@ export const createScope = async (req: Request, res: Response, next: NextFunctio
 export const createScopes = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const organization = await organizationService.getOrganizationByName(req.params.orgName);
-        const scopes = await scopeService.createScopes(organization!._id, req.body);
+        const scopes = await scopeService.createScopes(
+            organization!._id,
+            new Types.ObjectId(req.userAuth!.userId),
+            req.body,
+        );
         return sendSuccess(res, {
             data: scopes,
             httpStatus: 201,

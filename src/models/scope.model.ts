@@ -8,6 +8,7 @@ export interface IScope {
     description?: string;
     type: string;
     organizationId: Types.ObjectId;
+    createdBy: Types.ObjectId;
     fields: Record<string, unknown>[];
     parentId: Types.ObjectId | null;
     permissions: {
@@ -27,6 +28,7 @@ const scopeSchema = new Schema<IScope>(
         description: { type: String },
         type: { type: String, required: true },
         organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+        createdBy: { type: Schema.Types.ObjectId, required: true },
         parentId: { type: Schema.Types.ObjectId, ref: 'Scope' },
         fields: [{ type: Schema.Types.Mixed }],
         permissions: {
