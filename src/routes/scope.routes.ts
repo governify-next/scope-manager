@@ -6,7 +6,11 @@ import {
     validateScopePermissionRoles,
 } from '../middlewares/scope.validator.js';
 import { existingOrganization } from '../middlewares/organization.validator.js';
-import { checkUserAuthentication } from '../middlewares/authenticator.validator.js';
+import {
+    checkUserAuthentication,
+    checkServiceAuthentication,
+} from '../middlewares/authenticator.validator.js';
+import { anyOf } from '../middlewares/anyof.validator.js';
 
 export const scopeRoutes = Router();
 
@@ -25,13 +29,13 @@ scopeRoutes.post(
 );
 scopeRoutes.get(
     '/organizations/:orgName/scopes',
-    checkUserAuthentication,
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
     existingOrganization,
     scopeController.getScopesByOrganization,
 );
 scopeRoutes.get(
     '/organizations/:orgName/scopes/:scopeId',
-    checkUserAuthentication,
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
     existingOrganization,
     scopeController.getScopeById,
 );

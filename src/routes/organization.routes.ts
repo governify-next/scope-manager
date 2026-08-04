@@ -16,7 +16,12 @@ import {
     validateSearchOrganizations,
     creatorMustKeepAdminRole,
 } from '../middlewares/organization.validator.js';
-import { hasSystemRole, checkUserAuthentication } from '../middlewares/authenticator.validator.js';
+import {
+    hasSystemRole,
+    checkUserAuthentication,
+    checkServiceAuthentication,
+    isService,
+} from '../middlewares/authenticator.validator.js';
 import {
     existingMembership,
     maxMembers,
@@ -51,9 +56,9 @@ organizationRoutes.post(
 );
 organizationRoutes.get(
     '/organizations/:orgName',
-    checkUserAuthentication,
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
     existingOrganization,
-    anyOf(hasOrgMembership, hasSystemRole(SystemRole.SUPERADMIN)),
+    anyOf(hasOrgMembership, hasSystemRole(SystemRole.SUPERADMIN), isService),
     organizationController.getOrganizationByName,
 );
 organizationRoutes.put(
