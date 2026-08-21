@@ -44,8 +44,8 @@ organizationRoutes.post(
 );
 organizationRoutes.get(
     '/organizations',
-    checkUserAuthentication,
-    hasSystemRole(SystemRole.SUPERADMIN),
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
+    anyOf(hasSystemRole(SystemRole.SUPERADMIN), isService),
     organizationController.getOrganizations,
 );
 organizationRoutes.post(
@@ -170,9 +170,9 @@ organizationRoutes.delete(
 // Organization Members
 organizationRoutes.get(
     '/organizations/:orgName/members',
-    checkUserAuthentication,
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
     existingOrganization,
-    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN), isService),
     validateExpand,
     organizationController.getMembers,
 );
