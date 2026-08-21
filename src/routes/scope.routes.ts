@@ -16,7 +16,7 @@ export const scopeRoutes = Router();
 
 scopeRoutes.post(
     '/organizations/:orgName/scopes',
-    checkUserAuthentication,
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
     existingOrganization,
     validateScope,
     scopeController.createScope,
