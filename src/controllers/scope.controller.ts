@@ -3,13 +3,22 @@ import * as scopeService from '../services/scope.service.js';
 import * as organizationService from '../services/organization.service.js';
 import { sendSuccess } from '../utils/standardResponse.js';
 import { Types } from 'mongoose';
+import { ValidationError } from '../utils/customErrors.js';
+
+const resolveCreatedBy = (req: Request) => {
+    const createdBy = req.userAuth?.userId ?? req.body.createdBy;
+    if (!createdBy || !Types.ObjectId.isValid(createdBy)) {
+        throw new ValidationError('A valid createdBy user is required');
+    }
+    return new Types.ObjectId(createdBy);
+};
 
 export const createScope = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const organization = await organizationService.getOrganizationByName(req.params.orgName);
         const scope = await scopeService.createScope(
             organization!._id,
-            new Types.ObjectId(req.userAuth!.userId),
+            resolveCreatedBy(req),
             req.body,
         );
         return sendSuccess(res, {
