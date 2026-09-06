@@ -23,7 +23,7 @@ scopeRoutes.post(
 );
 scopeRoutes.post(
     '/organizations/:orgName/scopes/tree',
-    checkUserAuthentication,
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
     existingOrganization,
     scopeController.createScopes,
 );

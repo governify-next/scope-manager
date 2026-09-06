@@ -5,9 +5,9 @@ import { sendSuccess } from '../utils/standardResponse.js';
 import { Types } from 'mongoose';
 import { ValidationError } from '../utils/customErrors.js';
 
-const resolveCreatedBy = (req: Request) => {
-    const createdBy = req.userAuth?.userId ?? req.body.createdBy;
-    if (!createdBy || !Types.ObjectId.isValid(createdBy)) {
+const resolveCreatedBy = (req: Request, serviceCreatedBy: unknown = req.body.createdBy) => {
+    const createdBy = req.userAuth?.userId ?? serviceCreatedBy;
+    if (typeof createdBy !== 'string' || !Types.ObjectId.isValid(createdBy)) {
         throw new ValidationError('A valid createdBy user is required');
     }
     return new Types.ObjectId(createdBy);
@@ -36,7 +36,7 @@ export const createScopes = async (req: Request, res: Response, next: NextFuncti
         const organization = await organizationService.getOrganizationByName(req.params.orgName);
         const scopes = await scopeService.createScopes(
             organization!._id,
-            new Types.ObjectId(req.userAuth!.userId),
+            resolveCreatedBy(req, req.get('X-Created-By')),
             req.body,
         );
         return sendSuccess(res, {
