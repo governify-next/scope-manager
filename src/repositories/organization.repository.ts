@@ -1,6 +1,12 @@
 import Organization, { IOrganization } from '../models/organization.model.js';
 import { DuplicateKeyError } from '../utils/customErrors.js';
-import type { FieldArrayName } from '../types/organization.types.js';
+import type {
+    FieldArrayName,
+    IField,
+    IRole,
+    OrganizationSearchFilters,
+} from '../types/organization.types.js';
+import { Types } from 'mongoose';
 
 export const createOrganization = async (data: Partial<IOrganization>) => {
     try {
@@ -23,15 +29,50 @@ export const createOrganization = async (data: Partial<IOrganization>) => {
     }
 };
 
-export const getOrganizations = async () => {
-    return await Organization.find();
+export const getOrganizations = async (page: number, limit: number) => {
+    const skip = (page - 1) * limit;
+    const [organizations, totalItems] = await Promise.all([
+        Organization.find().skip(skip).limit(limit),
+        Organization.countDocuments(),
+    ]);
+    return { organizations, totalItems };
 };
 
-export const getOrganizationById = async (organizationId: string) => {
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export const searchOrganizations = async (
+    page: number,
+    limit: number,
+    filters: OrganizationSearchFilters,
+    organizationIds?: Types.ObjectId[],
+) => {
+    const skip = (page - 1) * limit;
+    const query: Record<string, unknown> = {};
+    if (organizationIds) {
+        query._id = { $in: organizationIds };
+    }
+    if (filters.nameOrDisplayName) {
+        const nameOrDisplayNameRegex = new RegExp(escapeRegex(filters.nameOrDisplayName), 'i');
+        query.$or = [{ name: nameOrDisplayNameRegex }, { displayName: nameOrDisplayNameRegex }];
+    }
+    if (filters.name) {
+        query.name = new RegExp(escapeRegex(filters.name), 'i');
+    }
+    if (filters.displayName) {
+        query.displayName = new RegExp(escapeRegex(filters.displayName), 'i');
+    }
+    const [organizations, totalItems] = await Promise.all([
+        Organization.find(query).skip(skip).limit(limit),
+        Organization.countDocuments(query),
+    ]);
+    return { organizations, totalItems };
+};
+
+export const getOrganizationById = async (organizationId: Types.ObjectId) => {
     return await Organization.findById(organizationId);
 };
 
-// Para trabajo interno en la organización
+// For internal work within the organization
 export const getOrganizationByName = async (orgName: string) => {
     return await Organization.findOne({ name: orgName });
 };
@@ -60,7 +101,7 @@ export const deleteOrganization = async (orgName: string) => {
     return await Organization.findOneAndDelete({ name: orgName });
 };
 
-export const addRole = async (orgName: string, role: { name: string; description: string }) => {
+export const addRole = async (orgName: string, role: IRole) => {
     return await Organization.findOneAndUpdate(
         { name: orgName },
         { $push: { roles: role } },
@@ -68,16 +109,12 @@ export const addRole = async (orgName: string, role: { name: string; description
     );
 };
 
-export const updateRole = async (
-    orgName: string,
-    oldRoleName: string,
-    data: { name: string; description: string },
-) => {
+export const updateRole = async (orgName: string, oldRoleName: string, data: IRole) => {
     return await Organization.findOneAndUpdate(
         { name: orgName, 'roles.name': oldRoleName },
         {
             $set: {
-                'roles.$.name': data.name, // $ nos dice el elemento del array que ha hecho "match" a lo puesto arriba
+                'roles.$.name': data.name,
                 'roles.$.description': data.description,
             },
         },
@@ -93,11 +130,9 @@ export const deleteRole = async (orgName: string, roleName: string) => {
     );
 };
 
-// Fields genéricos para que elementFields y agreementFields compartan la misma lógica
+// Generic fields so that scopeFields and agreementFields share the same logic
 
-type FieldData = { name: string; description: string; type: string; value?: unknown };
-
-export const addField = async (orgName: string, arrayName: FieldArrayName, field: FieldData) => {
+export const addField = async (orgName: string, arrayName: FieldArrayName, field: IField) => {
     return await Organization.findOneAndUpdate(
         { name: orgName },
         { $push: { [arrayName]: field } },
@@ -109,14 +144,14 @@ export const updateField = async (
     orgName: string,
     arrayName: FieldArrayName,
     oldFieldName: string,
-    data: FieldData,
+    data: IField,
 ) => {
     const setClause: Record<string, unknown> = {
         [`${arrayName}.$[fieldElem].name`]: data.name,
         [`${arrayName}.$[fieldElem].description`]: data.description,
         [`${arrayName}.$[fieldElem].type`]: data.type,
     };
-    // Solo se actualiza value si fue enviado en el body
+    // value is only updated if it was sent in the body
     if ('value' in data) setClause[`${arrayName}.$[fieldElem].value`] = data.value;
 
     return await Organization.findOneAndUpdate(

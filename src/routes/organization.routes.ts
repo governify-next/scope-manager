@@ -7,43 +7,65 @@ import {
     existingOrganization,
     existingRole,
     existingField,
+    validateExistingRoleNamesBody,
     uniqueRole,
     maxRoles,
     uniqueField,
     hasOrgRole,
     notAdminRole,
+    validateSearchOrganizations,
+    creatorMustKeepAdminRole,
 } from '../middlewares/organization.validator.js';
-import { hasRole, checkUserAuthentication } from '../middlewares/user.authenticator.js';
-import { validateUsername } from '../middlewares/user.validator.js';
+import {
+    hasSystemRole,
+    checkUserAuthentication,
+    checkServiceAuthentication,
+    isService,
+} from '../middlewares/authenticator.validator.js';
 import {
     existingMembership,
     maxMembers,
     notSelfRemoval,
     validateExpand,
+    hasOrgMembership,
 } from '../middlewares/membership.validator.js';
 import { SystemRole } from '../types/systemRole.js';
+import { anyOf } from '../middlewares/anyof.validator.js';
 
 export const organizationRoutes = Router();
 
-// Organización
+// Organization
 organizationRoutes.post(
     '/organizations',
     checkUserAuthentication,
-    hasRole(SystemRole.ADMIN),
+    hasSystemRole(SystemRole.ADMIN),
     validateOrganization,
     organizationController.createOrganization,
 );
-organizationRoutes.get('/organizations', organizationController.getOrganizations);
+organizationRoutes.get(
+    '/organizations',
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
+    anyOf(hasSystemRole(SystemRole.SUPERADMIN), isService),
+    organizationController.getOrganizations,
+);
+organizationRoutes.post(
+    '/organizations/search',
+    checkUserAuthentication,
+    validateSearchOrganizations,
+    organizationController.searchOrganizations,
+);
 organizationRoutes.get(
     '/organizations/:orgName',
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
     existingOrganization,
+    anyOf(hasOrgMembership, hasSystemRole(SystemRole.SUPERADMIN), isService),
     organizationController.getOrganizationByName,
 );
 organizationRoutes.put(
     '/organizations/:orgName',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     validateOrganization,
     organizationController.updateOrganization,
 );
@@ -51,7 +73,7 @@ organizationRoutes.delete(
     '/organizations/:orgName',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     organizationController.deleteOrganization,
 );
 
@@ -60,7 +82,7 @@ organizationRoutes.post(
     '/organizations/:orgName/roles',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     validateRole,
     uniqueRole,
     maxRoles,
@@ -70,7 +92,7 @@ organizationRoutes.put(
     '/organizations/:orgName/roles/:roleName',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     notAdminRole,
     existingRole('params'),
     validateRole,
@@ -81,39 +103,39 @@ organizationRoutes.delete(
     '/organizations/:orgName/roles/:roleName',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     notAdminRole,
     existingRole('params'),
     organizationController.deleteRole,
 );
 
-// ElementFields
+// ScopeFields
 organizationRoutes.post(
-    '/organizations/:orgName/elementFields',
+    '/organizations/:orgName/scopeFields',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     validateField,
-    uniqueField('elementFields'),
-    organizationController.addElementField,
+    uniqueField('scopeFields'),
+    organizationController.addScopeField,
 );
 organizationRoutes.put(
-    '/organizations/:orgName/elementFields/:fieldName',
+    '/organizations/:orgName/scopeFields/:fieldName',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
-    existingField('elementFields'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
+    existingField('scopeFields'),
     validateField,
-    uniqueField('elementFields'),
-    organizationController.updateElementField,
+    uniqueField('scopeFields'),
+    organizationController.updateScopeField,
 );
 organizationRoutes.delete(
-    '/organizations/:orgName/elementFields/:fieldName',
+    '/organizations/:orgName/scopeFields/:fieldName',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
-    existingField('elementFields'),
-    organizationController.deleteElementField,
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
+    existingField('scopeFields'),
+    organizationController.deleteScopeField,
 );
 
 // AgreementFields
@@ -121,7 +143,7 @@ organizationRoutes.post(
     '/organizations/:orgName/agreementFields',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     validateField,
     uniqueField('agreementFields'),
     organizationController.addAgreementField,
@@ -130,7 +152,7 @@ organizationRoutes.put(
     '/organizations/:orgName/agreementFields/:fieldName',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     existingField('agreementFields'),
     validateField,
     uniqueField('agreementFields'),
@@ -140,17 +162,17 @@ organizationRoutes.delete(
     '/organizations/:orgName/agreementFields/:fieldName',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     existingField('agreementFields'),
     organizationController.deleteAgreementField,
 );
 
-// Org - Users
+// Organization Members
 organizationRoutes.get(
     '/organizations/:orgName/members',
-    checkUserAuthentication,
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN), isService),
     validateExpand,
     organizationController.getMembers,
 );
@@ -158,8 +180,7 @@ organizationRoutes.post(
     '/organizations/:orgName/members',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
-    validateUsername,
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     existingMembership(false, 'body'),
     maxMembers,
     organizationController.addUserToOrganization,
@@ -169,29 +190,27 @@ organizationRoutes.delete(
     '/organizations/:orgName/members/:username',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     existingMembership(true, 'params'),
     notSelfRemoval,
     organizationController.removeUserFromOrganization,
 );
 
-// Org - User roles
+organizationRoutes.get(
+    '/organizations/:orgName/members/me/admin',
+    checkUserAuthentication,
+    existingOrganization,
+    anyOf(hasOrgMembership, hasSystemRole(SystemRole.SUPERADMIN)),
+    organizationController.isCurrentUserOrganizationAdmin,
+);
+
 organizationRoutes.post(
     '/organizations/:orgName/members/:username/roles',
     checkUserAuthentication,
     existingOrganization,
-    hasOrgRole('admin'),
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN)),
     existingMembership(true, 'params'),
-    existingRole('body'),
-    organizationController.addRoleToUser,
-);
-
-organizationRoutes.delete(
-    '/organizations/:orgName/members/:username/roles/:roleName',
-    checkUserAuthentication,
-    existingOrganization,
-    hasOrgRole('admin'),
-    existingMembership(true, 'params'),
-    existingRole('params'),
-    organizationController.removeRoleFromUser,
+    validateExistingRoleNamesBody,
+    creatorMustKeepAdminRole,
+    organizationController.replaceUserRoles,
 );

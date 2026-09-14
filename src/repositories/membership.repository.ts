@@ -2,16 +2,16 @@ import { Types } from 'mongoose';
 import Membership from '../models/membership.model.js';
 import type { ExpandMode } from '../types/membership.types.js';
 
-// Método interno para el borrado en cascada de un rol
+// Internal method for the cascade deletion of a role
 export const removeRoleFromMemberships = async (roleId: Types.ObjectId) => {
-    // bulk da rendimiento (ejecuta las dos operaciones como un paquete) y seguridad (no hay estado intermedio)
+    // bulk gives performance (runs both operations as one batch) and safety (no intermediate state)
     return await Membership.bulkWrite([
         {
-            // Borramos el roleId de los arrays de rolesId en los que aparezca
+            // Remove the roleId from every rolesId array where it appears
             updateMany: { filter: { rolesId: roleId }, update: { $pull: { rolesId: roleId } } },
         },
         {
-            // Si un array de rolesId queda huérfano (vacío), lo eliminamos
+            // If a rolesId array is left orphan (empty), delete it
             deleteMany: { filter: { rolesId: { $size: 0 } } },
         },
     ]);
@@ -42,22 +42,22 @@ export const assignRole = async (
     orgId: Types.ObjectId,
     roleId: Types.ObjectId,
 ) => {
-    // Usamos upsert, si no existe la membership la crea, si existe añade el rol
+    // Use upsert: it creates the membership if it does not exist, and adds the role if it does
     return await Membership.findOneAndUpdate(
         { organizationId: orgId, userId: userId },
-        { $addToSet: { rolesId: roleId } }, // addToSet previene duplicados e inicializa el array si es necesario
+        { $addToSet: { rolesId: roleId } }, // addToSet prevents duplicates and initializes the array if needed
         { upsert: true, new: true },
     );
 };
 
-export const unassignRole = async (
+export const replaceRoles = async (
     organizationId: Types.ObjectId,
     userId: Types.ObjectId,
-    roleId: Types.ObjectId,
+    rolesId: Types.ObjectId[],
 ) => {
     return await Membership.findOneAndUpdate(
         { organizationId, userId },
-        { $pull: { rolesId: roleId } },
+        { $set: { rolesId } },
         { new: true },
     );
 };
@@ -70,10 +70,23 @@ export const getMembershipsByOrganization = async (orgId: Types.ObjectId, expand
     const query = Membership.find({ organizationId: orgId });
 
     if (expand === 'full') {
-        query.populate('userId').populate('organizationId');
+        query.populate('organizationId');
     } else if (expand === 'names') {
-        query.populate('userId', 'username').populate('organizationId', 'name');
+        query.populate('organizationId', 'name');
     }
 
     return await query.exec();
+};
+export const findMembershipsByUser = async (userId: Types.ObjectId) => {
+    return await Membership.find({ userId: userId });
+};
+
+export const countMembershipsByOrganizations = async (orgIds: Types.ObjectId[]) => {
+    if (orgIds.length === 0) return [];
+
+    return await Membership.aggregate<{ organizationId: Types.ObjectId; members: number }>([
+        { $match: { organizationId: { $in: orgIds } } },
+        { $group: { _id: '$organizationId', members: { $sum: 1 } } },
+        { $project: { _id: 0, organizationId: '$_id', members: 1 } },
+    ]);
 };

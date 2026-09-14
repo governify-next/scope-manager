@@ -3,7 +3,7 @@ import * as membershipRepository from '../repositories/membership.repository.js'
 import type { ExpandMode } from '../types/membership.types.js';
 
 export const removeRoleFromMemberships = async (roleId: Types.ObjectId) => {
-    // Existencia de id ya viene validada, solo hay que borrar
+    // The id existence is already validated, we only need to delete
     return await membershipRepository.removeRoleFromMemberships(roleId);
 };
 
@@ -20,20 +20,30 @@ export const assignRole = async (
     orgId: Types.ObjectId,
     roleId: Types.ObjectId,
 ) => {
-    // Id viene del token de la req, no es necesario validar
+    // The id comes from the req token, no validation needed
     return await membershipRepository.assignRole(userId, orgId, roleId);
 };
 
-export const unassignRole = async (
-    orgId: Types.ObjectId,
+export const replaceRoles = async (
+    organizationId: Types.ObjectId,
     userId: Types.ObjectId,
-    roleId: Types.ObjectId,
+    rolesId: Types.ObjectId[],
 ) => {
-    return await membershipRepository.unassignRole(orgId, userId, roleId);
+    return await membershipRepository.replaceRoles(organizationId, userId, rolesId);
 };
 
 export const findMembership = async (orgId: Types.ObjectId, userId: Types.ObjectId) => {
     return await membershipRepository.findMembership(orgId, userId);
+};
+
+export const findMembershipsByUser = async (userId: Types.ObjectId) => {
+    return await membershipRepository.findMembershipsByUser(userId);
+};
+
+export const countMembershipsByOrganizations = async (orgIds: Types.ObjectId[]) => {
+    const counts = await membershipRepository.countMembershipsByOrganizations(orgIds);
+
+    return new Map(counts.map((count) => [count.organizationId.toString(), count.members]));
 };
 
 export const findEspecificRole = async (

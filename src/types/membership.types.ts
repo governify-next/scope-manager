@@ -1,2 +1,2 @@
-// Para la query del endpoint que permite obtener las memberships de una org
+// For the query of the endpoint that returns the memberships of an org
 export type ExpandMode = 'none' | 'full' | 'names';

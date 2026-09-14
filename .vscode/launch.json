@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: server (tsx)",
+            "program": "${workspaceFolder}/src/server.ts",
+            "runtimeExecutable": "node",
+            "runtimeArgs": ["--import", "tsx"],
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal",
+            "sourceMaps": true
+        }
+    ]
+}

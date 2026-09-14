@@ -1,5 +1,7 @@
 import { Response } from 'express';
+import { Error as MongooseError } from 'mongoose';
 import { StdError } from './customErrors.js';
+import { Pagination } from './pagination.js';
 
 type NormalizedError = {
     message: string;
@@ -17,6 +19,10 @@ function normalizeError(err: unknown): NormalizedError {
             details: err.details,
         };
     }
+    // Malformed id in the route
+    if (err instanceof MongooseError.CastError) {
+        return { message: 'Invalid id', httpStatus: 400, appCode: 'VALIDATION_ERROR' };
+    }
     if (err instanceof Error) {
         return { message: err.message, httpStatus: 500, appCode: 'UNKNOWN_ERROR' };
     }
@@ -27,11 +33,13 @@ export function sendSuccess(
     res: Response,
     {
         data,
+        pagination,
         message = 'OK',
         httpStatus = 200,
         appCode = 'SUCCESS',
     }: {
         data: unknown;
+        pagination?: Pagination;
         message?: string;
         httpStatus?: number;
         appCode?: string;
@@ -43,6 +51,7 @@ export function sendSuccess(
         httpStatus,
         appCode,
         data,
+        ...(pagination ? { pagination } : {}),
         error: null,
     };
     return res.status(httpStatus).json(response);

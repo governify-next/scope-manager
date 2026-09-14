@@ -1,13 +1,20 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import { ValidationError, ForbiddenError, LimitError } from '../utils/customErrors.js';
+import {
+    ValidationError,
+    ForbiddenError,
+    LimitError,
+    NotFoundError,
+    DuplicateKeyError,
+} from '../utils/customErrors.js';
 import { findMembership } from '../services/membership.service.js';
 import { getOrganizationOrFail } from './organization.validator.js';
 import Membership from '../models/membership.model.js';
-import { getUserOrFail } from './user.validator.js';
+import * as authenticatorIntegration from '../integrations/authenticator.integration.js';
 import type { ExpandMode } from '../types/membership.types.js';
 import { bootEnv } from '../config/bootConfig.js';
+import { Types } from 'mongoose';
 
-// Sincronizamos con el type definido para que el compilador avise si se actualiza
+// Kept in sync with the defined type so the compiler warns if it is updated
 const VALID_EXPAND_VALUES: readonly string[] = ['none', 'full', 'names'] satisfies ExpandMode[];
 
 export const existingMembership = (shouldExist: boolean, source: 'body' | 'params') => {
@@ -18,21 +25,21 @@ export const existingMembership = (shouldExist: boolean, source: 'body' | 'param
 
         try {
             const organization = await getOrganizationOrFail(req.params.orgName);
-            const user = await getUserOrFail(username);
+            const user = await authenticatorIntegration.getUserByUsername(username);
 
             const membership = await findMembership(organization._id, user._id);
 
-            // Para añadir un usuario a una org, no debería existir ya
+            // To add a user to an org, it should not exist already
             if (membership && !shouldExist)
                 return next(
-                    new ValidationError(
+                    new DuplicateKeyError(
                         `The user '${user.username}' already exists in organization '${organization.name}'`,
                     ),
                 );
-            // Para eliminar un usuario de una org, debería existir
+            // To remove a user from an org, it should exist
             if (!membership && shouldExist)
                 return next(
-                    new ValidationError(
+                    new NotFoundError(
                         `The user '${user.username}' does not exist in organization '${organization.name}'`,
                     ),
                 );
@@ -42,6 +49,22 @@ export const existingMembership = (shouldExist: boolean, source: 'body' | 'param
             next(err);
         }
     };
+};
+
+export const hasOrgMembership = async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.userAuth?.userId;
+    try {
+        const organization = await getOrganizationOrFail(req.params.orgName);
+
+        const membership = await findMembership(organization._id, new Types.ObjectId(userId));
+        if (!membership)
+            return next(
+                new ForbiddenError(`You are not a member of organization '${organization.name}'`),
+            );
+        next();
+    } catch (err) {
+        next(err);
+    }
 };
 
 export const maxMembers = async (req: Request, res: Response, next: NextFunction) => {
@@ -74,12 +97,12 @@ export const validateExpand = (req: Request, res: Response, next: NextFunction) 
     next();
 };
 
-// Como siempre tiene que existir un admin en la organización, impedimos que el usuario que hace
-// la petición se elimine así mismo y así de paso cumplimos la validación
+// Since an organization must always have an admin, we prevent the requesting user from
+// removing themselves, which also satisfies that validation
 export const notSelfRemoval = async (req: Request, res: Response, next: NextFunction) => {
     if (!req.params.username) return next(new ValidationError('Username is required'));
     try {
-        const user = await getUserOrFail(req.params.username);
+        const user = await authenticatorIntegration.getUserByUsername(req.params.username);
         if (req.userAuth!.userId.toString() === user._id.toString())
             return next(new ForbiddenError('You cannot remove yourself from the organization'));
         next();
