@@ -272,3 +272,57 @@ export const replaceUserRoles = async (req: Request, res: Response, next: NextFu
         next(err);
     }
 };
+
+export const rotateOrganizationInviteToken = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        const token = await organizationService.rotateOrganizationInviteToken(
+            req.params.orgName,
+            req.userAuth!.userId,
+        );
+        return sendSuccess(res, {
+            data: token,
+            message: 'New organization invite token generated',
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const getOrganizationInviteToken = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        const token = await organizationService.getOrganizationInviteToken(req.params.orgName);
+        return sendSuccess(res, {
+            data: token,
+            message: 'Organization invite token retrieved',
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const registerInOrganizationWithInviteToken = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        const membership = await organizationService.registerInOrganizationWithInviteToken(
+            req.params.token,
+            req.body,
+        );
+        return sendSuccess(res, {
+            data: membership,
+            message: 'User registered in organization successfully',
+        });
+    } catch (err) {
+        next(err);
+    }
+};
