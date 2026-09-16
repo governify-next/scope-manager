@@ -14,6 +14,7 @@ import { IOrganization } from '../models/organization.model.js';
 import type { FieldArrayName } from '../types/organization.types.js';
 import { bootEnv } from '../config/bootConfig.js';
 import * as authenticatorIntegration from '../integrations/authenticator.integration.js';
+import * as organizationService from '../services/organization.service.js';
 
 // Helper
 export async function getOrganizationOrFail(orgName: string): Promise<IOrganization> {
@@ -356,3 +357,22 @@ export const validateSearchOrganizations = [
         next();
     },
 ];
+
+export const existingOrganizationByInviteToken = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        const organization = await organizationService.getOrganizationByInviteToken(
+            req.params.token,
+        );
+        if (!organization)
+            throw new NotFoundError(
+                `Organization with invite token '${req.params.token}' not found`,
+            );
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
