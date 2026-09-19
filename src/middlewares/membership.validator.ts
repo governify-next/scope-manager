@@ -13,6 +13,7 @@ import * as authenticatorIntegration from '../integrations/authenticator.integra
 import type { ExpandMode } from '../types/membership.types.js';
 import { bootEnv } from '../config/bootConfig.js';
 import { Types } from 'mongoose';
+import * as organizationService from '../services/organization.service.js';
 
 // Kept in sync with the defined type so the compiler warns if it is updated
 const VALID_EXPAND_VALUES: readonly string[] = ['none', 'full', 'names'] satisfies ExpandMode[];
@@ -68,11 +69,20 @@ export const hasOrgMembership = async (req: Request, res: Response, next: NextFu
 };
 
 export const maxMembers = async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.params.orgName) return next(new ValidationError('Organization name is required'));
-
     try {
+        let orgName: string;
+        if (req.params.token) {
+            const organization = await organizationService.getOrganizationByInviteToken(
+                req.params.token,
+            );
+            orgName = organization!.name;
+        } else {
+            if (!req.params.orgName)
+                return next(new ValidationError('Organization name is required'));
+            orgName = req.params.orgName;
+        }
         const max = bootEnv.MAX_MEMBERS_PER_ORGANIZATION;
-        const organization = await getOrganizationOrFail(req.params.orgName);
+        const organization = await getOrganizationOrFail(orgName);
         const count = await Membership.countDocuments({ organizationId: organization._id });
         if (count >= max)
             return next(

@@ -49,6 +49,10 @@ export interface IOrganization extends Document {
     scopeFields: IField[];
     agreementFields: IField[];
     roles: IRole[];
+    invite: {
+        token: string;
+        createdBy: Types.ObjectId;
+    };
 }
 
 // Main Schema
@@ -64,6 +68,10 @@ const organizationSchema = new Schema<IOrganization>(
         roles: {
             type: [roleSchema],
             default: [],
+        },
+        invite: {
+            token: { type: String, unique: true, select: false, sparse: true },
+            createdBy: { type: Schema.Types.ObjectId },
         },
     },
     {

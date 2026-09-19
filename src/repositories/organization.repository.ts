@@ -172,3 +172,12 @@ export const deleteField = async (
         { new: true },
     );
 };
+
+export const getOrganizationInviteToken = async (orgName: string) => {
+    const organization = await Organization.findOne({ name: orgName }).select('+invite.token');
+    return organization!.invite.token;
+};
+
+export const getOrganizationByInviteToken = async (token: string) => {
+    return await Organization.findOne({ 'invite.token': token });
+};

@@ -15,6 +15,7 @@ import {
     notAdminRole,
     validateSearchOrganizations,
     creatorMustKeepAdminRole,
+    existingOrganizationByInviteToken,
 } from '../middlewares/organization.validator.js';
 import {
     hasSystemRole,
@@ -213,4 +214,26 @@ organizationRoutes.post(
     validateExistingRoleNamesBody,
     creatorMustKeepAdminRole,
     organizationController.replaceUserRoles,
+);
+
+// Organization Invite Token
+organizationRoutes.post(
+    '/organizations/:orgName/invite',
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
+    existingOrganization,
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN), isService),
+    organizationController.rotateOrganizationInviteToken,
+);
+organizationRoutes.get(
+    '/organizations/:orgName/invite',
+    anyOf(checkUserAuthentication, checkServiceAuthentication),
+    existingOrganization,
+    anyOf(hasOrgRole('admin'), hasSystemRole(SystemRole.SUPERADMIN), isService),
+    organizationController.getOrganizationInviteToken,
+);
+organizationRoutes.post(
+    '/invites/:token',
+    existingOrganizationByInviteToken,
+    maxMembers,
+    organizationController.registerInOrganizationWithInviteToken,
 );
