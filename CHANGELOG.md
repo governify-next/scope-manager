@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/governify-next/scope-manager/compare/v1.1.0...v1.2.0) (2026-09-19)
+
+
+### Features
+
+* implement organization invite token management ([f22b477](https://github.com/governify-next/scope-manager/commit/f22b47715f8cc41f85d4b571f3a892ef31ba6716))
+* implement organization invite token management with creation, rotation, and registration endpoints ([1f65c12](https://github.com/governify-next/scope-manager/commit/1f65c12f2ec19f92fe30b46d077059c76ee18881))
+
+
+### Bug Fixes
+
+* new version ([499263b](https://github.com/governify-next/scope-manager/commit/499263bdf90a8070fb3747e4c777dc3581d01a25))
+
 ## [1.1.0](https://github.com/governify-next/scope-manager/compare/v1.0.0...v1.1.0) (2026-09-14)
 
 ### Features
