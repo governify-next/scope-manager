@@ -71,7 +71,7 @@ const organizationSchema = new Schema<IOrganization>(
         },
         invite: {
             token: { type: String, unique: true, select: false, sparse: true },
-            createdBy: { type: Schema.Types.ObjectId },
+            createdBy: { type: Schema.Types.ObjectId, select: false },
         },
     },
     {

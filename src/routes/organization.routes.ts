@@ -237,3 +237,4 @@ organizationRoutes.post(
     maxMembers,
     organizationController.registerInOrganizationWithInviteToken,
 );
+organizationRoutes.get('/invites/:token', organizationController.validateInviteToken);
