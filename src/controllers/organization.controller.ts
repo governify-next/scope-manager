@@ -286,7 +286,7 @@ export const rotateOrganizationInviteToken = async (
         );
         return sendSuccess(res, {
             data: token,
-            message: 'New organization invite token generated',
+            message: 'New invitation token generated for the organization',
         });
     } catch (err) {
         next(err);
@@ -302,7 +302,7 @@ export const getOrganizationInviteToken = async (
         const token = await organizationService.getOrganizationInviteToken(req.params.orgName);
         return sendSuccess(res, {
             data: token,
-            message: 'Organization invite token retrieved',
+            message: 'Invitation token retrieved for the organization',
         });
     } catch (err) {
         next(err);
@@ -337,7 +337,9 @@ export const validateInviteToken = async (req: Request, res: Response, next: Nex
             throw new NotFoundError('Invitation not found');
         }
         return sendSuccess(res, {
-            data: null,
+            data: {
+                valid: true,
+            },
             message: 'Invitation is valid',
         });
     } catch (err) {
