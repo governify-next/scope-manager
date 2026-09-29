@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.0](https://github.com/governify-next/scope-manager/compare/v1.2.0...v1.3.0) (2026-09-29)
+
+
+### Features
+
+* add @oas-tools/oas-telemetry for enhanced telemetry support ([704ea76](https://github.com/governify-next/scope-manager/commit/704ea76ecbc41c4430cdf08847de3ae8e4c5b8c9))
+* add validateInviteToken endpoint to check invitation validity ([c722927](https://github.com/governify-next/scope-manager/commit/c722927e5ec7dd52ff6dac2ca2b8b816dfc70fc5))
+* add validateInviteToken endpoint to check invitation validity ([e74179a](https://github.com/governify-next/scope-manager/commit/e74179ad853bf4f5dbef6e3a4be22680986da00a))
+* new version ([997c75d](https://github.com/governify-next/scope-manager/commit/997c75db8d844a94e56e3ce082e657a0096d9b1e))
+
+
+### Bug Fixes
+
+* update OTEL_SERVICE_NAME to match the service identity ([c916230](https://github.com/governify-next/scope-manager/commit/c916230cd1386c5b106f717064633fc34980c2ec))
+
 ## [1.2.0](https://github.com/governify-next/scope-manager/compare/v1.1.0...v1.2.0) (2026-09-19)
 
 
