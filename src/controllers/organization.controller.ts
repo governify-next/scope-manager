@@ -4,6 +4,7 @@ import { sendSuccess } from '../utils/standardResponse.js';
 import type { ExpandMode } from '../types/membership.types.js';
 import { Types } from 'mongoose';
 import { getPaginationQuery } from '../utils/pagination.js';
+import { NotFoundError } from '../utils/customErrors.js';
 
 export const createOrganization = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -285,7 +286,7 @@ export const rotateOrganizationInviteToken = async (
         );
         return sendSuccess(res, {
             data: token,
-            message: 'New organization invite token generated',
+            message: 'New invitation token generated for the organization',
         });
     } catch (err) {
         next(err);
@@ -301,7 +302,7 @@ export const getOrganizationInviteToken = async (
         const token = await organizationService.getOrganizationInviteToken(req.params.orgName);
         return sendSuccess(res, {
             data: token,
-            message: 'Organization invite token retrieved',
+            message: 'Invitation token retrieved for the organization',
         });
     } catch (err) {
         next(err);
@@ -321,6 +322,25 @@ export const registerInOrganizationWithInviteToken = async (
         return sendSuccess(res, {
             data: membership,
             message: 'User registered in organization successfully',
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const validateInviteToken = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const organization = await organizationService.getOrganizationByInviteToken(
+            req.params.token,
+        );
+        if (!organization) {
+            throw new NotFoundError('Invitation not found');
+        }
+        return sendSuccess(res, {
+            data: {
+                valid: true,
+            },
+            message: 'Invitation is valid',
         });
     } catch (err) {
         next(err);

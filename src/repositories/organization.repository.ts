@@ -179,5 +179,5 @@ export const getOrganizationInviteToken = async (orgName: string) => {
 };
 
 export const getOrganizationByInviteToken = async (token: string) => {
-    return await Organization.findOne({ 'invite.token': token });
+    return await Organization.findOne({ 'invite.token': token }).select('+invite.createdBy');
 };

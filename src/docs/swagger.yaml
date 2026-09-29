@@ -30,6 +30,8 @@ tags:
       description: Fields that define the structure of an organization's agreements
     - name: Organizations Members
       description: Member management within an organization
+    - name: Invitations
+      description: Invitation tokens management used to register new users into an organization
     - name: Scopes
       description: Scope management within an organization
     - name: ScopePermissions
@@ -925,6 +927,148 @@ paths:
                     $ref: '#/components/responses/InternalError'
 
     # ──────────────────────────────────────────────
+    # Invitations
+    # ──────────────────────────────────────────────
+    /api/v1/organizations/{orgName}/invite:
+        parameters:
+            - $ref: '#/components/parameters/orgName'
+        get:
+            tags:
+                - Invitations
+            summary: Get the current organization invite token
+            operationId: getOrganizationInviteToken
+            security:
+                - BearerAuth: []
+            description: |
+                Returns the invitation token that is currently active for the organization. Anyone who has the token can open the public invitation page and register
+                as a new member, so treat it as a secret.
+            responses:
+                '200':
+                    description: Current invitation token retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InviteTokenResponse'
+                            example:
+                                success: true
+                                message: Invitation token retrieved for the organization
+                                httpStatus: 200
+                                appCode: SUCCESS
+                                data: xK9mP2nQ7vR4sT8wY1zA5bC3dE6fG0hJ_kL2nM4pQ6rS
+                                error: null
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
+                '403':
+                    $ref: '#/components/responses/Forbidden'
+                '404':
+                    $ref: '#/components/responses/OrganizationNotFound'
+                '500':
+                    $ref: '#/components/responses/InternalError'
+        post:
+            tags:
+                - Invitations
+            summary: Generate a new organization invite token
+            operationId: rotateOrganizationInviteToken
+            security:
+                - BearerAuth: []
+            description: |
+                Creates a new invitation token for the organization and replaces the
+                previous one. Use this when there is no token yet, or when you want to revoke the
+                current invitation link.
+            responses:
+                '200':
+                    description: New invitation token generated successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InviteTokenResponse'
+                            example:
+                                success: true
+                                message: New invitation token generated for the organization
+                                httpStatus: 200
+                                appCode: SUCCESS
+                                data: xK9mP2nQ7vR4sT8wY1zA5bC3dE6fG0hJ_kL2nM4pQ6rS
+                                error: null
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
+                '403':
+                    $ref: '#/components/responses/Forbidden'
+                '404':
+                    $ref: '#/components/responses/OrganizationNotFound'
+                '500':
+                    $ref: '#/components/responses/InternalError'
+
+    /api/v1/invites/{token}:
+        parameters:
+            - $ref: '#/components/parameters/inviteToken'
+        get:
+            tags:
+                - Invitations
+            summary: Check the validity of an invitation token
+            operationId: validateInviteToken
+            description: |
+                Checks if the given invitation token is valid. If the token is the one currently active for an organization, the
+                response is successful and `data.valid` is `true` (no organization details are exposed). If the token is unknown, was never generated, or was rotated, the API returns 404.
+            responses:
+                '200':
+                    description: The invitation token is valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InviteValidityResponse'
+                            example:
+                                success: true
+                                message: Invitation is valid
+                                httpStatus: 200
+                                appCode: SUCCESS
+                                data:
+                                    valid: true
+                                error: null
+                '404':
+                    $ref: '#/components/responses/InviteNotFound'
+                '500':
+                    $ref: '#/components/responses/InternalError'
+        post:
+            tags:
+                - Invitations
+            summary: Register a new user with an invitation token
+            operationId: registerInOrganizationWithInviteToken
+            description: |
+                Creates a new user account and adds that user as a member of the
+                organization that owns the invitation token. To this end, scope manager creates the user in the
+                authenticator service with system role `USER` and status `ACTIVE`, then
+                creates a membership in the organization.
+            requestBody:
+                $ref: '#/components/requestBodies/InviteUserBody'
+            responses:
+                '200':
+                    description: User registered and added to the organization successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MembershipResponse'
+                            example:
+                                success: true
+                                message: User registered in organization successfully
+                                httpStatus: 200
+                                appCode: SUCCESS
+                                data:
+                                    _id: 665c3d4e5f6a7b8c9d0e1f2a
+                                    organizationId: 665a1b2c3d4e5f6a7b8c9d0e
+                                    userId: 665d4e5f6a7b8c9d0e1f2a3b
+                                    rolesId: []
+                                    createdAt: '2025-06-01T12:00:00.000Z'
+                                    updatedAt: '2025-06-01T12:00:00.000Z'
+                                    __v: 0
+                                error: null
+                '403':
+                    $ref: '#/components/responses/LimitExceeded'
+                '404':
+                    $ref: '#/components/responses/InviteNotFound'
+                '500':
+                    $ref: '#/components/responses/InternalError'
+
+    # ──────────────────────────────────────────────
     # Scopes
     # ──────────────────────────────────────────────
     /api/v1/organizations/{orgName}/scopes:
@@ -1424,6 +1568,15 @@ components:
             schema:
                 type: string
             example: janedoe
+        inviteToken:
+            name: token
+            in: path
+            required: true
+            description: |
+                Invitation token of an organization.
+            schema:
+                type: string
+            example: xK9mP2nQ7vR4sT8wY1zA5bC3dE6fG0hJ_kL2nM4pQ6rS
         scopeId:
             name: scopeId
             in: path
@@ -1585,6 +1738,20 @@ components:
                         $ref: '#/components/schemas/MemberInput'
                     example:
                         username: janedoe
+        InviteUserBody:
+            description: |
+                Account details of the person who is accepting the invitation.
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/InviteUserInput'
+                    example:
+                        username: janedoe
+                        name: Jane
+                        surname: Doe
+                        email: jane.doe@example.com
+                        password: a-secure-password
 
         ScopeBody:
             description: |
@@ -1771,6 +1938,54 @@ components:
                         data: null
                         error:
                             message: Duplicate key error
+                            details: null
+        InviteNotFound:
+            description: |
+                The invitation token is not valid. This happens when the token does not
+                exist, never belonged to an organization, or was replaced by a newer one.
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorResponse'
+                    examples:
+                        invitationNotFound:
+                            summary: Token is not valid (GET)
+                            value:
+                                success: false
+                                message: Invitation not found
+                                httpStatus: 404
+                                appCode: NOT_FOUND
+                                data: null
+                                error:
+                                    message: Invitation not found
+                                    details: null
+                        organizationInviteNotFound:
+                            summary: Token does not match any organization (POST)
+                            value:
+                                success: false
+                                message: "Organization with invite token 'xK9mP2nQ7vR4sT8wY1zA5bC3dE6fG0hJ_kL2nM4pQ6rS' not found"
+                                httpStatus: 404
+                                appCode: NOT_FOUND
+                                data: null
+                                error:
+                                    message: "Organization with invite token 'xK9mP2nQ7vR4sT8wY1zA5bC3dE6fG0hJ_kL2nM4pQ6rS' not found"
+                                    details: null
+        LimitExceeded:
+            description: |
+                The organization has reached its maximum number of members and cannot
+                accept another registration through the invitation.
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorResponse'
+                    example:
+                        success: false
+                        message: "Organization 'universidad-sevilla' has reached the maximum limit of 1000 members."
+                        httpStatus: 403
+                        appCode: LIMIT_EXCEEDED
+                        data: null
+                        error:
+                            message: "Organization 'universidad-sevilla' has reached the maximum limit of 1000 members."
                             details: null
         OrganizationNotFound:
             description: The organization does not exist
@@ -2036,6 +2251,31 @@ components:
                           type: array
                           items:
                               $ref: '#/components/schemas/Membership'
+
+        InviteTokenResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          type: string
+                          description: Current invitation token of the organization
+                          example: xK9mP2nQ7vR4sT8wY1zA5bC3dE6fG0hJ_kL2nM4pQ6rS
+
+        InviteValidityResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          type: object
+                          required:
+                              - valid
+                          properties:
+                              valid:
+                                  type: boolean
+                                  description: True when the invitation token is currently active
+                                  example: true
 
         AdminStatusResponse:
             allOf:
@@ -2365,6 +2605,41 @@ components:
                     type: string
                     description: Username of the user to add
                     example: janedoe
+
+        InviteUserInput:
+            type: object
+            description: |
+                Data required to create an account and join the organization through
+                an invitation token.
+            required:
+                - username
+                - name
+                - surname
+                - email
+                - password
+            properties:
+                username:
+                    type: string
+                    description: Unique username of the new user
+                    example: janedoe
+                name:
+                    type: string
+                    description: First name of the new user
+                    example: Jane
+                surname:
+                    type: string
+                    description: Last name of the new user
+                    example: Doe
+                email:
+                    type: string
+                    format: email
+                    description: Email of the new user
+                    example: jane.doe@example.com
+                password:
+                    type: string
+                    format: password
+                    description: Password of the new user
+                    example: a-secure-password
 
         # ── Scope ───────────────────────────────
         Scope:
