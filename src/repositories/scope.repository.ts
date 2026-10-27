@@ -19,6 +19,16 @@ export const getScopesByOrganizationId = async (organizationId: Types.ObjectId) 
     return await Scope.find({ organizationId }).lean();
 };
 
+export const countScopesByOrganizations = async (orgIds: Types.ObjectId[]) => {
+    if (orgIds.length === 0) return [];
+
+    return await Scope.aggregate<{ organizationId: Types.ObjectId; scopes: number }>([
+        { $match: { organizationId: { $in: orgIds } } },
+        { $group: { _id: '$organizationId', scopes: { $sum: 1 } } },
+        { $project: { _id: 0, organizationId: '$_id', scopes: 1 } },
+    ]);
+};
+
 export const getScopeById = async (
     organizationId: Types.ObjectId,
     scopeId: string | Types.ObjectId,

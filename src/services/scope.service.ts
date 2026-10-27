@@ -5,6 +5,12 @@ import { NotFoundError } from '../utils/customErrors.js';
 import { Types } from 'mongoose';
 import { IScopeNode, IScopeNodeInput } from '../types/scope.types.js';
 
+export const countScopesByOrganizations = async (orgIds: Types.ObjectId[]) => {
+    const counts = await scopeRepository.countScopesByOrganizations(orgIds);
+
+    return new Map(counts.map((count) => [count.organizationId.toString(), count.scopes]));
+};
+
 export const createScope = async (
     organizationId: Types.ObjectId,
     createdBy: Types.ObjectId,
