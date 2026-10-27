@@ -24,23 +24,29 @@ export const getOrganizationByName = async (orgName: string) => {
 
 const createToken = () => randomBytes(32).toString('base64url');
 
-const addMembersCount = async (organizations: IOrganization[]) => {
-    const memberCounts = await membershipService.countMembershipsByOrganizations(
-        organizations.map((organization) => organization._id as Types.ObjectId),
-    );
+const addCounts = async (organizations: IOrganization[]) => {
+    const organizationIds = organizations.map((organization) => organization._id as Types.ObjectId);
+    const [memberCounts, scopeCounts] = await Promise.all([
+        membershipService.countMembershipsByOrganizations(organizationIds),
+        scopeService.countScopesByOrganizations(organizationIds),
+    ]);
 
-    return organizations.map((organization) => ({
-        ...organization.toObject(),
-        members: memberCounts.get(organization._id.toString()) ?? 0,
-    }));
+    return organizations.map((organization) => {
+        const organizationId = organization._id.toString();
+        return {
+            ...organization.toObject(),
+            members: memberCounts.get(organizationId) ?? 0,
+            scopes: scopeCounts.get(organizationId) ?? 0,
+        };
+    });
 };
 
-export const getOrganizationByNameWithMembers = async (orgName: string) => {
+export const getOrganizationByNameWithCounts = async (orgName: string) => {
     const organization = await getOrganizationByName(orgName);
     if (!organization) return organization;
 
-    const [organizationWithMembers] = await addMembersCount([organization]);
-    return organizationWithMembers;
+    const [organizationWithCounts] = await addCounts([organization]);
+    return organizationWithCounts;
 };
 
 export const createOrganization = async (data: Partial<IOrganization>, userId: Types.ObjectId) => {
@@ -68,7 +74,7 @@ export const getOrganizations = async (page: number, limit: number) => {
         limit,
     );
     return {
-        organizations: await addMembersCount(organizations),
+        organizations: await addCounts(organizations),
         pagination: createPagination(page, limit, totalItems),
     };
 };
@@ -95,7 +101,7 @@ export const searchOrganizations = async (
     );
 
     return {
-        organizations: await addMembersCount(organizations),
+        organizations: await addCounts(organizations),
         pagination: createPagination(page, limit, totalItems),
     };
 };

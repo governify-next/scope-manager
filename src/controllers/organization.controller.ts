@@ -54,7 +54,7 @@ export const searchOrganizations = async (req: Request, res: Response, next: Nex
 
 export const getOrganizationByName = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const organization = await organizationService.getOrganizationByNameWithMembers(
+        const organization = await organizationService.getOrganizationByNameWithCounts(
             req.params.orgName,
         );
         return sendSuccess(res, { data: organization });
