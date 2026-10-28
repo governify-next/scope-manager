@@ -116,6 +116,7 @@ export const updateRole = async (orgName: string, oldRoleName: string, data: IRo
             $set: {
                 'roles.$.name': data.name,
                 'roles.$.description': data.description,
+                'roles.$.color': data.color,
             },
         },
         { new: true },

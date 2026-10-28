@@ -102,6 +102,16 @@ export const validateOrganization = [
 export const validateRole = [
     nameValidation('name'),
     descriptionValidation('description'),
+    body('color')
+        .optional()
+        .isString()
+        .withMessage('Color must be a string')
+        .matches(/^#[0-9a-f]{6}$/i)
+        .withMessage('Color must be a hex color with the format #rrggbb')
+        .toLowerCase()
+        .not()
+        .isIn(['#000000', '#ffffff'])
+        .withMessage('Pure white and pure black are not allowed'),
     (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
         if (!errors.isEmpty())
