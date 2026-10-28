@@ -26,15 +26,21 @@ const createToken = () => randomBytes(32).toString('base64url');
 
 const addCounts = async (organizations: IOrganization[]) => {
     const organizationIds = organizations.map((organization) => organization._id as Types.ObjectId);
-    const [memberCounts, scopeCounts] = await Promise.all([
+    const [memberCounts, roleMemberCounts, scopeCounts] = await Promise.all([
         membershipService.countMembershipsByOrganizations(organizationIds),
+        membershipService.countMembershipsByRoles(organizationIds),
         scopeService.countScopesByOrganizations(organizationIds),
     ]);
 
     return organizations.map((organization) => {
         const organizationId = organization._id.toString();
+        const organizationObject = organization.toObject<IOrganization>();
         return {
-            ...organization.toObject(),
+            ...organizationObject,
+            roles: organizationObject.roles.map((role) => ({
+                ...role,
+                members: roleMemberCounts.get(role._id!.toString()) ?? 0,
+            })),
             members: memberCounts.get(organizationId) ?? 0,
             scopes: scopeCounts.get(organizationId) ?? 0,
         };
