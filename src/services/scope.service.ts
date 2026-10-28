@@ -4,11 +4,34 @@ import { IScope } from '../models/scope.model.js';
 import { NotFoundError } from '../utils/customErrors.js';
 import { Types } from 'mongoose';
 import { IScopeNode, IScopeNodeInput } from '../types/scope.types.js';
+import * as registryIntegration from '../integrations/registry.integration.js';
 
 export const countScopesByOrganizations = async (orgIds: Types.ObjectId[]) => {
     const counts = await scopeRepository.countScopesByOrganizations(orgIds);
 
     return new Map(counts.map((count) => [count.organizationId.toString(), count.scopes]));
+};
+
+export const countAgreementCollectionsByOrganizations = async (orgIds: Types.ObjectId[]) => {
+    const collectionCounts = new Map<string, number>();
+    const scopes = await scopeRepository.getScopesByOrganizationIds(orgIds);
+    if (scopes.length === 0) return collectionCounts;
+
+    const scopeOrganizations = new Map(
+        scopes.map((scope) => [scope._id.toString(), scope.organizationId.toString()]),
+    );
+    const counts = await registryIntegration.countAgreementCollectionsByScopes([
+        ...scopeOrganizations.keys(),
+    ]);
+
+    counts.forEach(({ scopeId, collections }) => {
+        const organizationId = scopeOrganizations.get(scopeId)!;
+        collectionCounts.set(
+            organizationId,
+            (collectionCounts.get(organizationId) ?? 0) + collections,
+        );
+    });
+    return collectionCounts;
 };
 
 export const createScope = async (

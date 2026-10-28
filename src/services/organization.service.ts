@@ -26,10 +26,11 @@ const createToken = () => randomBytes(32).toString('base64url');
 
 const addCounts = async (organizations: IOrganization[]) => {
     const organizationIds = organizations.map((organization) => organization._id as Types.ObjectId);
-    const [memberCounts, roleMemberCounts, scopeCounts] = await Promise.all([
+    const [memberCounts, roleMemberCounts, scopeCounts, collectionCounts] = await Promise.all([
         membershipService.countMembershipsByOrganizations(organizationIds),
         membershipService.countMembershipsByRoles(organizationIds),
         scopeService.countScopesByOrganizations(organizationIds),
+        scopeService.countAgreementCollectionsByOrganizations(organizationIds),
     ]);
 
     return organizations.map((organization) => {
@@ -43,6 +44,7 @@ const addCounts = async (organizations: IOrganization[]) => {
             })),
             members: memberCounts.get(organizationId) ?? 0,
             scopes: scopeCounts.get(organizationId) ?? 0,
+            collections: collectionCounts.get(organizationId) ?? 0,
         };
     });
 };
