@@ -37,6 +37,7 @@ const fieldSchema = new Schema(
 const roleSchema = new Schema({
     name: { type: String, required: true },
     description: { type: String, required: true },
+    color: { type: String, lowercase: true, default: '#6b7280' },
 });
 
 // TypeScript Interface

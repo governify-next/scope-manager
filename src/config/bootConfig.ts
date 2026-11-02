@@ -14,6 +14,7 @@ export const bootEnv = {
 
     // Internal service URLs
     AUTHENTICATOR_SERVICE_URL: process.env.AUTHENTICATOR_SERVICE_URL || 'http://localhost:5900',
+    REGISTRY_SERVICE_URL: process.env.REGISTRY_SERVICE_URL || 'http://localhost:5902',
 
     // Database URIs
     MONGO_URI: process.env.MONGO_URI || 'mongodb://localhost:27017/governify-next',

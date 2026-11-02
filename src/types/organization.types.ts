@@ -20,4 +20,5 @@ export interface IRole {
     _id?: Types.ObjectId;
     name: string;
     description: string;
+    color?: string;
 }

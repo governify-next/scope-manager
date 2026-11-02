@@ -19,6 +19,10 @@ export const getScopesByOrganizationId = async (organizationId: Types.ObjectId) 
     return await Scope.find({ organizationId }).lean();
 };
 
+export const getScopesByOrganizationIds = async (orgIds: Types.ObjectId[]) => {
+    return await Scope.find({ organizationId: { $in: orgIds } }, { organizationId: 1 }).lean();
+};
+
 export const countScopesByOrganizations = async (orgIds: Types.ObjectId[]) => {
     if (orgIds.length === 0) return [];
 

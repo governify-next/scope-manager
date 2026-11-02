@@ -46,6 +46,12 @@ export const countMembershipsByOrganizations = async (orgIds: Types.ObjectId[]) 
     return new Map(counts.map((count) => [count.organizationId.toString(), count.members]));
 };
 
+export const countMembershipsByRoles = async (orgIds: Types.ObjectId[]) => {
+    const counts = await membershipRepository.countMembershipsByRoles(orgIds);
+
+    return new Map(counts.map((count) => [count.roleId.toString(), count.members]));
+};
+
 export const findEspecificRole = async (
     orgId: Types.ObjectId,
     userId: Types.ObjectId,

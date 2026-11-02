@@ -90,3 +90,14 @@ export const countMembershipsByOrganizations = async (orgIds: Types.ObjectId[]) 
         { $project: { _id: 0, organizationId: '$_id', members: 1 } },
     ]);
 };
+
+export const countMembershipsByRoles = async (orgIds: Types.ObjectId[]) => {
+    if (orgIds.length === 0) return [];
+
+    return await Membership.aggregate<{ roleId: Types.ObjectId; members: number }>([
+        { $match: { organizationId: { $in: orgIds } } },
+        { $unwind: '$rolesId' },
+        { $group: { _id: '$rolesId', members: { $sum: 1 } } },
+        { $project: { _id: 0, roleId: '$_id', members: 1 } },
+    ]);
+};
