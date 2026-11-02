@@ -1512,7 +1512,9 @@ components:
             type: http
             scheme: bearer
             bearerFormat: JWT
-            description: JWT bearer token
+            description: |
+                JWT issued by Authenticator. Enter only the token, without the Bearer prefix.
+                Use a user or service token according to the operation's authentication requirements.
 
     # ── Parameters ────────────────────────────────
     parameters:
