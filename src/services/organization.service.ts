@@ -11,6 +11,7 @@ import * as membershipService from '../services/membership.service.js';
 import * as scopeService from './scope.service.js';
 import { Types } from 'mongoose';
 import * as authenticatorIntegration from '../integrations/authenticator.integration.js';
+import * as registryIntegration from '../integrations/registry.integration.js';
 import { createPagination } from '../utils/pagination.js';
 import { SystemRole } from '../types/systemRole.js';
 import { ForbiddenError } from '../utils/customErrors.js';
@@ -156,6 +157,9 @@ export const deleteRole = async (orgName: string, roleName: string) => {
     const roleToDelete = org!.roles.find((r) => r.name === roleName);
     // Ask Membership to remove the role from the assignments
     await membershipService.removeRoleFromMemberships(roleToDelete!._id!); // ! tells Ts it is not null, now that the interface declares id?
+    await registryIntegration.removeRoleFromAgreementCollectionPermissions(
+        roleToDelete!._id!.toString(),
+    );
     // Delete the role from the organization
     return await organizationRepository.deleteRole(orgName, roleName);
 };
