@@ -11,9 +11,9 @@ const logger = getLogger().setTag('server.ts');
 const PORT = bootEnv.PORT;
 
 connectMongo()
-    .then(() => {
+    .then(async () => {
+        await fetchServiceToken();
         app.listen(PORT, () => {
-            fetchServiceToken();
             logger.log(`Server running on http://localhost:${PORT}`);
             logger.log(`Docs available at http://localhost:${PORT}/api-docs`);
         });
