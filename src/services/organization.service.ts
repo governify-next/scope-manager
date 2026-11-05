@@ -228,6 +228,16 @@ export const isOrganizationAdmin = async (orgName: string, userId: string, syste
     return Boolean(membership);
 };
 
+export const getCurrentUserRoles = async (orgName: string, userId: string) => {
+    const organization = await getOrganizationByName(orgName);
+    const membership = await membershipService.findMembership(
+        organization!._id,
+        new Types.ObjectId(userId),
+    );
+
+    return membership?.rolesId ?? [];
+};
+
 export const replaceUserRoles = async (orgName: string, username: string, roleNames: string[]) => {
     const user = await authenticatorIntegration.getUserByUsername(username);
     const organization = await getOrganizationByName(orgName);

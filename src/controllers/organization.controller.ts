@@ -261,6 +261,18 @@ export const isCurrentUserOrganizationAdmin = async (
     }
 };
 
+export const getCurrentUserRoles = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const rolesId = await organizationService.getCurrentUserRoles(
+            req.params.orgName,
+            req.userAuth!.userId,
+        );
+        return sendSuccess(res, { data: { rolesId }, message: 'Current user roles retrieved' });
+    } catch (err) {
+        next(err);
+    }
+};
+
 export const replaceUserRoles = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const membership = await organizationService.replaceUserRoles(

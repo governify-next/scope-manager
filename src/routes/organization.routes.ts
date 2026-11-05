@@ -89,6 +89,13 @@ organizationRoutes.post(
     maxRoles,
     organizationController.addRole,
 );
+organizationRoutes.get(
+    '/organizations/:orgName/roles/me',
+    checkUserAuthentication,
+    existingOrganization,
+    anyOf(hasOrgMembership, hasSystemRole(SystemRole.SUPERADMIN)),
+    organizationController.getCurrentUserRoles,
+);
 organizationRoutes.put(
     '/organizations/:orgName/roles/:roleName',
     checkUserAuthentication,
