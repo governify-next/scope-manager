@@ -414,6 +414,45 @@ paths:
                 '500':
                     $ref: '#/components/responses/InternalError'
 
+    /api/v1/organizations/{orgName}/roles/me:
+        parameters:
+            - $ref: '#/components/parameters/orgName'
+        get:
+            tags:
+                - Organizations Roles
+            summary: Get the roles of the current user in the organization
+            operationId: getCurrentUserRoles
+            security:
+                - BearerAuth: []
+            description: |
+                Returns the ids of the roles assigned to the authenticated user in the organization.
+                Requires the authenticated user to be a member of the organization or to have the system SUPERADMIN role.
+                A SUPERADMIN who is not a member receives an empty list.
+            responses:
+                '200':
+                    description: Current user's roles in the organization
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CurrentUserRolesResponse'
+                            example:
+                                success: true
+                                message: Current user roles retrieved
+                                httpStatus: 200
+                                appCode: SUCCESS
+                                data:
+                                    rolesId:
+                                        - 665b2c3d4e5f6a7b8c9d0e1f
+                                error: null
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
+                '403':
+                    $ref: '#/components/responses/Forbidden'
+                '404':
+                    $ref: '#/components/responses/OrganizationNotFound'
+                '500':
+                    $ref: '#/components/responses/InternalError'
+
     /api/v1/organizations/{orgName}/roles/{roleName}:
         parameters:
             - $ref: '#/components/parameters/orgName'
@@ -2304,6 +2343,22 @@ components:
                               isAdmin:
                                   type: boolean
                                   description: True when the authenticated user is organization admin or system SUPERADMIN
+
+        CurrentUserRolesResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      data:
+                          type: object
+                          required:
+                              - rolesId
+                          properties:
+                              rolesId:
+                                  type: array
+                                  description: Array of Role ObjectId references assigned to the authenticated user
+                                  items:
+                                      type: string
 
         NullResponse:
             allOf:

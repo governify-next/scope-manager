@@ -11,6 +11,7 @@ import * as membershipService from '../services/membership.service.js';
 import * as scopeService from './scope.service.js';
 import { Types } from 'mongoose';
 import * as authenticatorIntegration from '../integrations/authenticator.integration.js';
+import * as registryIntegration from '../integrations/registry.integration.js';
 import { createPagination } from '../utils/pagination.js';
 import { SystemRole } from '../types/systemRole.js';
 import { ForbiddenError } from '../utils/customErrors.js';
@@ -156,6 +157,9 @@ export const deleteRole = async (orgName: string, roleName: string) => {
     const roleToDelete = org!.roles.find((r) => r.name === roleName);
     // Ask Membership to remove the role from the assignments
     await membershipService.removeRoleFromMemberships(roleToDelete!._id!); // ! tells Ts it is not null, now that the interface declares id?
+    await registryIntegration.removeRoleFromAgreementCollectionPermissions(
+        roleToDelete!._id!.toString(),
+    );
     // Delete the role from the organization
     return await organizationRepository.deleteRole(orgName, roleName);
 };
@@ -222,6 +226,16 @@ export const isOrganizationAdmin = async (orgName: string, userId: string, syste
     );
 
     return Boolean(membership);
+};
+
+export const getCurrentUserRoles = async (orgName: string, userId: string) => {
+    const organization = await getOrganizationByName(orgName);
+    const membership = await membershipService.findMembership(
+        organization!._id,
+        new Types.ObjectId(userId),
+    );
+
+    return membership?.rolesId ?? [];
 };
 
 export const replaceUserRoles = async (orgName: string, username: string, roleNames: string[]) => {
