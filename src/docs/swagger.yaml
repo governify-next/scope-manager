@@ -503,8 +503,8 @@ paths:
                 Removes a role from the organization.
                 Requires organization admin role or system SUPERADMIN role.
                 The built-in 'admin' role cannot be deleted.
-                This operation also removes the role from associated memberships and deletes
-                memberships that are left without roles.
+                This operation also removes the role from associated memberships. Members left
+                without roles remain in the organization.
             responses:
                 '200':
                     description: Role deleted successfully. Returns the updated organization.
