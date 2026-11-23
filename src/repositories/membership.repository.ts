@@ -4,17 +4,7 @@ import type { ExpandMode } from '../types/membership.types.js';
 
 // Internal method for the cascade deletion of a role
 export const removeRoleFromMemberships = async (roleId: Types.ObjectId) => {
-    // bulk gives performance (runs both operations as one batch) and safety (no intermediate state)
-    return await Membership.bulkWrite([
-        {
-            // Remove the roleId from every rolesId array where it appears
-            updateMany: { filter: { rolesId: roleId }, update: { $pull: { rolesId: roleId } } },
-        },
-        {
-            // If a rolesId array is left orphan (empty), delete it
-            deleteMany: { filter: { rolesId: { $size: 0 } } },
-        },
-    ]);
+    return await Membership.updateMany({ rolesId: roleId }, { $pull: { rolesId: roleId } });
 };
 
 export const findMembership = async (orgId: Types.ObjectId, userId: Types.ObjectId) => {
